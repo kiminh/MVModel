@@ -4,12 +4,13 @@ import numpy as np
 import vgg19_trainable as vgg19
 
 class CNNModel(object):
-    def __init__(self, is_training=True):
+    def __init__(self, keep_prob=1.0, is_training=True):
         self.is_training = is_training
+        self.keep_prob = keep_prob
 
     def build_model(self, input_images, vgg_path):
         self.train_mode = tf.placeholder(tf.bool)
-        self.vgg = vgg19.Vgg19(vgg_path, dropout=1.0)
+        self.vgg = vgg19.Vgg19(vgg_path, dropout=self.keep_prob)
         self.vgg.build(input_images, self.train_mode)
         self.output = self.vgg.fc7
 

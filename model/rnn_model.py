@@ -27,7 +27,7 @@ class RNNModel(object):
 
     def build_model(self, input_tensor):
         # self.x = tf.stack(input_tensors, axis=1)
-        self.x = tf.reshape(input_tensor, [-1, self.n_steps, 4096])
+        self.x = tf.reshape(input_tensor, [-1, self.n_steps, self.n_input])
         # self.x = tf.placeholder("float", [None, self.n_steps, self.n_input])
         self.y = tf.placeholder("float", [None, self.n_classes])
         self.p = tf.placeholder("float", shape=())

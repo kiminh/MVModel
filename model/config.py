@@ -7,8 +7,8 @@ class TrainingConfig(object):
         self.training_epoches = 100
         self.display_epoches = 1
         self.save_epoches = 10
-        self.cnn_keep_prob = 1.0
-        self.rnn_keep_prob = 1.0
+        self.cnn_keep_prob = 0.5
+        self.rnn_keep_prob = 0.5
 
 
 class ModelConfig(object):

@@ -8,8 +8,11 @@ from data import modelnet
 from cnn_model import CNNModel
 from rnn_model import RNNModel
 
-tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
-tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
+#tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
+#tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
+
+tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_model', 'path for saving model')
+tf.flags.DEFINE_string('vgg_path', '/home1/shangmingyang/models/vgg/vgg19.npy', 'trained model for vgg')
 
 FLAGS = tf.flags.FLAGS
 

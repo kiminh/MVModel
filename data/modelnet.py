@@ -5,12 +5,10 @@ import os
 from tensorflow.contrib.learn.python.learn.datasets import base
 
 # server config
-# tf.flags.DEFINE_string('train_data_dir', '/home3/lxh/modelnet/modelnet40v1_2/train', 'file path saving model features for training')
-# tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving model labels for training')
-# tf.flags.DEFINE_string('test_data_dir', '/home3/lxh/modelnet/modelnet40v1_2/test', 'file path saving model features for testing')
-# tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
-tf.flags.DEFINE_string('train_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/train', 'file path saving model features for training')
-tf.flags.DEFINE_string('test_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/test', 'file path saving model features for testing')
+tf.flags.DEFINE_string('train_data_dir', '/home3/lxh/modelnet/modelnet40v1_2/train', 'file path saving model features for training')
+tf.flags.DEFINE_string('test_data_dir', '/home3/lxh/modelnet/modelnet40v1_2/test', 'file path saving model features for testing')
+#tf.flags.DEFINE_string('train_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/train', 'file path saving model features for training')
+#tf.flags.DEFINE_string('test_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/test', 'file path saving model features for testing')
 
 FLAGS = tf.flags.FLAGS
 

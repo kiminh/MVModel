@@ -13,6 +13,7 @@ from rnn_model import RNNModel
 
 tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_model', 'path for saving model')
 tf.flags.DEFINE_string('vgg_path', '/home1/shangmingyang/models/vgg/vgg19.npy', 'trained model for vgg')
+tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'modelnet dir')
 
 FLAGS = tf.flags.FLAGS
 
@@ -58,14 +59,17 @@ class MVModel(object):
     def co_train(self):
         with tf.Session(config=self.gpu_config) as sess:
             self.build_model()
+            print('build model finished')
             init = tf.global_variables_initializer()
             saver = tf.train.Saver()
             # TODO restore trained model before
             sess.run(init)
+            print('init model parameter finished')
             epoch = 1
             training_epoches = 100
             display_epoch = 1
             save_epoch = 10
+            print('start training')
             while epoch <= training_epoches:
                 batch = 1
                 while batch * batch_size <= self.data.train.size():

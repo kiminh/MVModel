@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from model.mv_model import MVModel
-from model.config import TrainingConfig
+from model.config import TrainingConfig, ModelConfig
 
 tf.flags.DEFINE_string('train_dir', '/home/shangmingyang/PycharmProjects/TF/mvmodel', 'Directory for saving and loading model checkpoints.')
 tf.flags.DEFINE_boolean('train_inception', False, 'whether to train inception submodel varibales.')
@@ -14,14 +14,14 @@ FLAGS = tf.flags.FLAGS
 def main(unused_argv):
     assert FLAGS.train_dir, '--train_dir is required'
 
-    model_config = TrainingConfig()
+    train_config, model_config = TrainingConfig(), ModelConfig()
 
     train_dir = FLAGS.train_dir
     if not tf.gfile.IsDirectory(train_dir):
         tf.logging.info("Creating training directory: %s", train_dir)
         tf.gfile.MakeDirs(train_dir)
 
-    mv_model = MVModel(4096, 12, 128, 40)
+    mv_model = MVModel(train_config, model_config)
     mv_model.co_train()
 
 if __name__ == '__main__':

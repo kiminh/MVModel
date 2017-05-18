@@ -8,8 +8,9 @@ from data import modelnet
 from cnn_model import CNNModel
 from rnn_model import RNNModel
 
-tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
-tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
+tf.flags.DEFINE_string('model_path', '/home/shangmingyang/PycharmProjects/MVModel/trained_model', 'path for saving model')
+tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/MVModel/trained_model/vgg19.npy', 'trained model for vgg')
+tf.flags.DEFINE_string('modelnet_path', '/home/shangmingyang/PycharmProjects/MVModel/data', 'modelnet data')
 
 FLAGS = tf.flags.FLAGS
 
@@ -23,18 +24,27 @@ training_iters = 1000
 keep_prob = 1.0 #TODO don't use dropout
 
 class MVModel(object):
-    def __init__(self, n_input, n_steps, n_hidden, n_classes, keep_prob=1.0, is_training=True, config=None):
+    # def __init__(self, n_input, n_steps, n_hidden, n_classes, keep_prob=1.0, is_training=True, config=None):
+    #     self.cnn_model = CNNModel()
+    #     self.rnn_model = RNNModel(n_input, n_steps, n_hidden, n_classes, keep_prob, is_training, config)
+    #
+    #     if config:
+    #         self.config = config
+    #     else:
+    #         self.config = tf.ConfigProto()
+    #         self.config.gpu_options.allow_growth = True
+    #
+    #     # self.mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
+    #     self.data = modelnet.read_data(FLAGS.modelnet_path)
+
+    def __init__(self, train_config, model_config, is_training=True):
+        self.train_config, self.model_config = train_config, model_config
         self.cnn_model = CNNModel()
-        self.rnn_model = RNNModel(n_input, n_steps, n_hidden, n_classes, keep_prob, is_training, config)
+        self.rnn_model = RNNModel(model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
+        self.gpu_config = tf.ConfigProto()
+        self.gpu_config.gpu_options.allow_growth = True
+        self.data = modelnet.read_data(FLAGS.modelnet_path)
 
-        if config:
-            self.config = config
-        else:
-            self.config = tf.ConfigProto()
-            self.config.gpu_options.allow_growth = True
-
-        # self.mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
-        self.data = modelnet.read_data('')
 
     def build_model(self):
         self.images = tf.placeholder(tf.float32, [None, 224, 224, 3])
@@ -44,7 +54,7 @@ class MVModel(object):
         self.optimizer = self.rnn_model.optimizer
 
     def co_train(self):
-        with tf.Session(config=self.config) as sess:
+        with tf.Session(config=self.gpu_config) as sess:
             self.build_model()
             init = tf.global_variables_initializer()
             saver = tf.train.Saver()
@@ -60,7 +70,9 @@ class MVModel(object):
                     batch_imgpaths, batch_labels = self.data.train.next_batch(batch_size)
                     batch_img = self.build_input(batch_imgpaths)
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
+                    print("batch " + str(epoch * batch))
                     batch += 1
+
                 if epoch % display_epoch == 0:
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))

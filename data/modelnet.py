@@ -9,8 +9,7 @@ from tensorflow.contrib.learn.python.learn.datasets import base
 # tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving model labels for training')
 # tf.flags.DEFINE_string('test_data_dir', '/home3/lxh/modelnet/modelnet40v1_2/test', 'file path saving model features for testing')
 # tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
-tf.flags.DEFINE_string('train_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/train', 'file path saving model features for training')
-tf.flags.DEFINE_string('test_data_dir', '/home/shangmingyang/PycharmProjects/TF/modelnet/test', 'file path saving model features for testing')
+tf.flags.DEFINE_string('data_dir', '/home/shangmingyang/PycharmProjects/MVModel/modelnet', 'modelnet dir')
 
 FLAGS = tf.flags.FLAGS
 
@@ -88,20 +87,22 @@ class DataSet(object):
 
 def read_data(data_dir, n_views=12):
     print("read data from %s" %data_dir)
-    train_views_files = os.listdir(FLAGS.train_data_dir)
+    train_data_dir = os.path.join(data_dir, 'train')
+    train_views_files = os.listdir(train_data_dir)
     train_views_files.sort()
     train_views_files = train_views_files[::n_views]
-    train_views_files = [os.path.join(FLAGS.train_data_dir, f) for f in train_views_files]
+    train_views_files = [os.path.join(train_data_dir, f) for f in train_views_files]
     train_numbers_in_class = [80 for i in range(40)]
     train_numbers_in_class[6], train_numbers_in_class[10] = 64, 79
     train_labels = [[j for i in range(train_numbers_in_class[j])] for j in range(40)]
     train_labels = sum(train_labels, [])
     train_labels = onehot(train_labels)
 
-    test_views_files = os.listdir(FLAGS.test_data_dir)
+    test_data_dir = os.path.join(data_dir, 'test')
+    test_views_files = os.listdir(test_data_dir)
     test_views_files.sort()
     test_views_files = test_views_files[::n_views]
-    test_views_files = [os.path.join(FLAGS.test_data_dir, f) for f in test_views_files]
+    test_views_files = [os.path.join(test_data_dir, f) for f in test_views_files]
     test_labels = [[j for i in range(20)] for j in range(40)]
     test_labels = sum(test_labels, [])
     test_labels = onehot(test_labels)
@@ -149,5 +150,5 @@ def run_readdata_demo(data_dir):
 
 if __name__ == '__main__':
     # _fake_write_data(FLAGS.data_dir) #only run once to fake data
-    run_readdata_demo("")
+    run_readdata_demo(FLAGS.data_dir)
     # data = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_feature_file))

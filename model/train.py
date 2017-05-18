@@ -21,7 +21,7 @@ def main(unused_argv):
         tf.logging.info("Creating training directory: %s", train_dir)
         tf.gfile.MakeDirs(train_dir)
 
-    mv_model = MVModel(4096, 2, 128, 40)
+    mv_model = MVModel(4096, 12, 128, 40)
     mv_model.co_train()
 
 if __name__ == '__main__':

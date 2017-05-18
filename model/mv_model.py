@@ -17,15 +17,6 @@ tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'm
 
 FLAGS = tf.flags.FLAGS
 
-# total_epoches = 10
-# save_epoches = 1
-# batch_size = 10
-# display_step = 10
-# save_step = 100
-# need_save = True
-# training_iters = 1000
-# keep_prob = 1.0 #TODO don't use dropout
-
 class MVModel(object):
     # def __init__(self, n_input, n_steps, n_hidden, n_classes, keep_prob=1.0, is_training=True, config=None):
     #     self.cnn_model = CNNModel()
@@ -66,17 +57,16 @@ class MVModel(object):
             sess.run(init)
             print('init model parameter finished')
             epoch = 1
-            # training_epoches = 100
-            # display_epoch = 1
-            # save_epoch = 10
             print('start training')
+
             while epoch <= self.train_config.training_epoches:
                 batch = 1
                 while batch * self.train_config.batch_size <= self.data.train.size():
                     batch_imgpaths, batch_labels = self.data.train.next_batch(self.train_config.batch_size)
                     batch_img = self.build_input(batch_imgpaths)
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
-                    print("batch " + str(epoch * batch))
+                    acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
+                    print("batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
                     batch += 1
 
                 if epoch % self.train_config.display_epoches == 0:

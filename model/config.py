@@ -3,9 +3,9 @@ class TrainingConfig(object):
     def __init__(self):
         self.train_inception_learning_rate = 0.0005
         self.max_checkpoints_to_keep = 5
-        self.batch_size = 1
+        self.batch_size = 4
         self.training_epoches = 100
-        self.display_epoches = 8
+        self.display_epoches = 1
         self.save_epoches = 10
         self.cnn_keep_prob = 1.0
         self.rnn_keep_prob = 1.0

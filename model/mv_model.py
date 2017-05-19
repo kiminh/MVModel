@@ -66,14 +66,14 @@ class MVModel(object):
                     batch_img = self.build_input(batch_imgpaths)
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
-                    print("batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
+                    print("epoch " + str(epoch) + ",batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
                     batch += 1
 
                 if epoch % self.train_config.display_epoches == 0:
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
                 if epoch % self.train_config.save_epoches == 0:
-                    test_imgpaths, test_labels = self.data.test.views(), self.data.test.labels()
+                    test_imgpaths, test_labels = self.data.test.views(), self.data.test.labels
                     test_imgs = self.build_input(test_imgpaths)
                     acc = sess.run([self.rnn_model.accuracy], feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels, self.cnn_model.train_mode:False})
                     print("epoch" + str(epoch) + ", Testing accuracy=" + "{:.6f}".format(acc))

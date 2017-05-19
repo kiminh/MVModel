@@ -33,7 +33,7 @@ class MVModel(object):
 
     def __init__(self, train_config, model_config, is_training=True):
         self.train_config, self.model_config = train_config, model_config
-        self.cnn_model = CNNModel(self.cnn_model.keep_prob)
+        self.cnn_model = CNNModel(self.train_config.cnn_keep_prob)
         self.rnn_model = RNNModel(model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
         self.gpu_config = tf.ConfigProto()
         self.gpu_config.gpu_options.allow_growth = True
@@ -48,7 +48,7 @@ class MVModel(object):
         self.optimizer = self.rnn_model.optimizer
 
     def co_train(self):
-        with tf.Session(config=self.gpu_config) as sess:
+        with tf.Session() as sess:
             self.build_model()
             print('build model finished')
             init = tf.global_variables_initializer()

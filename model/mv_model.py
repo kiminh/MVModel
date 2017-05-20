@@ -18,19 +18,6 @@ tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'm
 FLAGS = tf.flags.FLAGS
 
 class MVModel(object):
-    # def __init__(self, n_input, n_steps, n_hidden, n_classes, keep_prob=1.0, is_training=True, config=None):
-    #     self.cnn_model = CNNModel()
-    #     self.rnn_model = RNNModel(n_input, n_steps, n_hidden, n_classes, keep_prob, is_training, config)
-    #
-    #     if config:
-    #         self.config = config
-    #     else:
-    #         self.config = tf.ConfigProto()
-    #         self.config.gpu_options.allow_growth = True
-    #
-    #     # self.mnist = input_data.read_data_sets('/tmp/data', one_hot=True)
-    #     self.data = modelnet.read_data(FLAGS.modelnet_path)
-
     def __init__(self, train_config, model_config, is_training=True):
         self.train_config, self.model_config = train_config, model_config
         self.cnn_model = CNNModel(self.train_config.cnn_keep_prob)
@@ -42,14 +29,12 @@ class MVModel(object):
 
     def build_model(self):
         self.images = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        self.cnn_model.build_model(self.images, FLAGS.vgg_path)
-        self.rnn_model.build_model(self.cnn_model.all_outputs())
+        with tf.variable_scope('mv-cnn') as scope:
+            self.cnn_model.build_model(self.images, FLAGS.vgg_path)
+        with tf.variable_scope('mv-rnn') as scope:
+            self.rnn_model.build_model(self.cnn_model.all_outputs())
 
         self.optimizer = self.rnn_model.optimizer
-
-    def debug_weights(sess):
-        fc6_weights = [v for v in tf.global_variables() if v.name=='fc6/fc6_weights:0'][0]
-        print("fc6 weights:", sess.run(fc6_weights))
 
     def co_train(self):
         with tf.Session() as sess:

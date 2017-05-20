@@ -11,7 +11,7 @@ from rnn_model import RNNModel
 #tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
 #tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
 
-tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_model', 'path for saving model')
+tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/mvmodel', 'path for saving model')
 tf.flags.DEFINE_string('vgg_path', '/home1/shangmingyang/models/vgg/vgg19.npy', 'trained model for vgg')
 tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'modelnet dir')
 
@@ -34,7 +34,7 @@ class MVModel(object):
     def __init__(self, train_config, model_config, is_training=True):
         self.train_config, self.model_config = train_config, model_config
         self.cnn_model = CNNModel(self.train_config.cnn_keep_prob)
-        self.rnn_model = RNNModel(model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
+        self.rnn_model = RNNModel(train_config.learning_rate, model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
         self.gpu_config = tf.ConfigProto()
         self.gpu_config.gpu_options.allow_growth = True
         self.data = modelnet.read_data(FLAGS.modelnet_path)
@@ -47,6 +47,10 @@ class MVModel(object):
 
         self.optimizer = self.rnn_model.optimizer
 
+    def debug_weights(sess):
+        fc6_weights = [v for v in tf.global_variables() if v.name=='fc6/fc6_weights:0'][0]
+        print("fc6 weights:", sess.run(fc6_weights))
+
     def co_train(self):
         with tf.Session() as sess:
             self.build_model()
@@ -58,6 +62,12 @@ class MVModel(object):
             print('init model parameter finished')
             epoch = 1
             print('start training')
+            print([v.name for v in tf.global_variables()])
+            #saver.save(sess, FLAGS.model_path, global_step=0)
+
+            return
+            #fc6_weights = [v for v in tf.global_variables() if v.name=='fc6/fc6_weights:0'][0]
+            cell_biases = [v for v in tf.global_variables() if v.name=='rnn/gru_cell/gates/biases/Adam_1:0'][0]
 
             while epoch <= self.train_config.training_epoches:
                 batch = 1
@@ -67,6 +77,8 @@ class MVModel(object):
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ",batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
+                    #print("fc6 weights:", sess.run(fc6_weights))
+                    #print("cell biases:", sess.run(cell_biases))
                     batch += 1
 
                 if epoch % self.train_config.display_epoches == 0:
@@ -77,6 +89,10 @@ class MVModel(object):
                     test_imgs = self.build_input(test_imgpaths)
                     acc = sess.run([self.rnn_model.accuracy], feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels, self.cnn_model.train_mode:False})
                     print("epoch" + str(epoch) + ", Testing accuracy=" + "{:.6f}".format(acc))
+                    try:
+                        saver.save(sess, FLAGS.model_path, global_step=epoch)
+                    except e:
+                        print("save model exception:", e)
 
                 epoch += 1
 

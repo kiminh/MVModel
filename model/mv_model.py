@@ -84,6 +84,27 @@ class MVModel(object):
                 epoch += 1
 
 
+    def test(self, test_model_path=""):
+        with tf.Session() as sess:
+            self.build_model()
+            print("build model finished")
+            saver = tf.train.Saver()
+            saver.restore(sess, test_model_path if len(test_model_path)>0 else FLAGS.model_path)
+            print("restore model parameter finished")
+
+            total_acc = 0.0
+
+            test_imgpaths, test_labels = self.data.test.views(), self.data.test.labels
+            with open('wrong_model.txt', 'w') as f:
+                for i in xrange(len(test_labels)):
+                    test_imgs = self.build_input(test_imgpaths[i*self.model_config.n_views : (i+1)*self.model_config.n_views])
+                    acc = sess.run([self.rnn_model.accuracy],
+                                  feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels[i:i+1], self.cnn_model.train_mode:False})
+                    if acc < 0.5:
+                        f.write(test_imgpaths[self.model_config.n_views*i]+'\n')
+                    total_acc += acc
+            print("accuracy in %d models: %f" %(len(test_labels), total_acc/len(test_labels)))
+
     def build_input(self, imgpaths):
         """
         build input data for model input tensor

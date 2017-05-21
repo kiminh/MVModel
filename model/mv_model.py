@@ -50,11 +50,11 @@ class MVModel(object):
             print('init model parameter finished')
             epoch = 1
             print('start training')
-            print([v.name for v in tf.global_variables()])
+            #print([v.name for v in tf.global_variables()])
             #saver.save(sess, FLAGS.model_path, global_step=0)
 
-            #fc6_weights = [v for v in tf.global_variables() if v.name=='fc6/fc6_weights:0'][0]
-            cell_biases = [v for v in tf.global_variables() if v.name=='rnn/gru_cell/gates/biases/Adam_1:0'][0]
+            fc6_weights = [v for v in tf.global_variables() if v.name=='mv-cnn/fc6/fc6_weights:0'][0]
+            #cell_biases = [v for v in tf.global_variables() if v.name=='rnn/gru_cell/gates/biases/Adam_1:0'][0]
 
             while epoch <= self.train_config.training_epoches:
                 batch = 1
@@ -64,7 +64,7 @@ class MVModel(object):
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ",batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
-                    #print("fc6 weights:", sess.run(fc6_weights))
+                    print("fc6 weights:", sess.run(fc6_weights))
                     #print("cell biases:", sess.run(cell_biases))
                     batch += 1
 
@@ -72,13 +72,13 @@ class MVModel(object):
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
                 if epoch % self.train_config.save_epoches == 0:
-                    test_imgpaths, test_labels = self.data.test.views(), self.data.test.labels
-                    test_imgs = self.build_input(test_imgpaths)
-                    acc = sess.run([self.rnn_model.accuracy], feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels, self.cnn_model.train_mode:False})
-                    print("epoch" + str(epoch) + ", Testing accuracy=" + "{:.6f}".format(acc))
+                    #test_imgpaths, test_labels = self.data.test.views(), self.data.test.labels
+                    #test_imgs = self.build_input(test_imgpaths)
+                    #acc = sess.run([self.rnn_model.accuracy], feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels, self.cnn_model.train_mode:False})
+                    #print("epoch" + str(epoch) + ", Testing accuracy=" + "{:.6f}".format(acc))
                     try:
                         saver.save(sess, FLAGS.model_path, global_step=epoch)
-                    except e:
+                    except Exception as e:
                         print("save model exception:", e)
 
                 epoch += 1

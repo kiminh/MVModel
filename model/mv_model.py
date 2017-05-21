@@ -20,7 +20,8 @@ FLAGS = tf.flags.FLAGS
 class MVModel(object):
     def __init__(self, train_config, model_config, is_training=True):
         self.train_config, self.model_config = train_config, model_config
-        self.cnn_model = CNNModel(self.train_config.cnn_keep_prob)
+        self.is_training = is_training
+        self.cnn_model = CNNModel(self.train_config.cnn_keep_prob, is_training=is_training)
         self.rnn_model = RNNModel(train_config.learning_rate, model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
         self.gpu_config = tf.ConfigProto()
         self.gpu_config.gpu_options.allow_growth = True

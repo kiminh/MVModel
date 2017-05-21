@@ -4,7 +4,7 @@ class TrainingConfig(object):
         self.train_inception_learning_rate = 0.0005
         self.max_checkpoints_to_keep = 5
         self.batch_size = 4
-        self.learning_rate = 0.0001
+        self.learning_rate = 0.00001
         self.training_epoches = 100
         self.display_epoches = 1
         self.save_epoches = 10

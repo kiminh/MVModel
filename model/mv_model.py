@@ -22,7 +22,8 @@ class MVModel(object):
         self.train_config, self.model_config = train_config, model_config
         self.is_training = is_training
         self.cnn_model = CNNModel(self.train_config.cnn_keep_prob, is_training=is_training)
-        self.rnn_model = RNNModel(train_config.learning_rate, model_config.n_fcs, model_config.n_views, model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0)
+        self.rnn_model = RNNModel(train_config.learning_rate, model_config.n_fcs, model_config.n_views,
+                                  model_config.n_hidden, model_config.n_classes, train_config.rnn_keep_prob if is_training else 1.0, is_training=self.is_training)
         self.gpu_config = tf.ConfigProto()
         self.gpu_config.gpu_options.allow_growth = True
         self.data = modelnet.read_data(FLAGS.modelnet_path)
@@ -43,7 +44,8 @@ class MVModel(object):
             print('build model finished')
             init = tf.global_variables_initializer()
             saver = tf.train.Saver()
-            # TODO restore trained model before
+            # TODO restore trained model before or run init op
+            # saver.restore(sess, FLAGS.model_path)
             sess.run(init)
             print('init model parameter finished')
             epoch = 1
@@ -51,7 +53,6 @@ class MVModel(object):
             print([v.name for v in tf.global_variables()])
             #saver.save(sess, FLAGS.model_path, global_step=0)
 
-            return
             #fc6_weights = [v for v in tf.global_variables() if v.name=='fc6/fc6_weights:0'][0]
             cell_biases = [v for v in tf.global_variables() if v.name=='rnn/gru_cell/gates/biases/Adam_1:0'][0]
 

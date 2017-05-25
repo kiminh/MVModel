@@ -10,7 +10,7 @@ class CNNModel(object):
 
     def build_model(self, input_images, vgg_path):
         self.train_mode = tf.placeholder(tf.bool)
-        self.vgg = vgg19.Vgg19(vgg_path, dropout=self.keep_prob, trainable=self.is_training)
+        self.vgg = vgg19.Vgg19(vgg_path, dropout=self.keep_prob, trainable=True)
         self.vgg.build(input_images, self.train_mode)
         self.output = self.vgg.relu7
 

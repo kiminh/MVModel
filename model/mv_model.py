@@ -11,7 +11,7 @@ from rnn_model import RNNModel
 #tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
 #tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
 
-tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/mvmodel', 'path for saving model')
+tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/0.8_0.8_4/mvmodel.ckpt', 'path for saving model')
 tf.flags.DEFINE_string('vgg_path', '/home1/shangmingyang/models/vgg/vgg19.npy', 'trained model for vgg')
 tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'modelnet dir')
 
@@ -43,13 +43,15 @@ class MVModel(object):
             self.build_model()
             print('build model finished')
             init = tf.global_variables_initializer()
-            saver = tf.train.Saver()
+            saver = tf.train.Saver(max_to_keep=10)
             # TODO restore trained model before or run init op
             # saver.restore(sess, FLAGS.model_path)
             sess.run(init)
             print('init model parameter finished')
             epoch = 1
             print('start training')
+            with open('variables.txt', 'w') as f:
+                f.writelines('\n'.join([v.name for v in tf.global_variables()]))
             #print([v.name for v in tf.global_variables()])
             #saver.save(sess, FLAGS.model_path, global_step=0)
 
@@ -64,7 +66,7 @@ class MVModel(object):
                     sess.run(self.optimizer, feed_dict={self.images: batch_img, self.rnn_model.y: batch_labels, self.cnn_model.train_mode: True})
                     acc, loss = sess.run([self.rnn_model.accuracy, self.rnn_model.cost], feed_dict={self.images:batch_img, self.rnn_model.y:batch_labels, self.cnn_model.train_mode:False})
                     print("epoch " + str(epoch) + ",batch " + str(epoch*batch) + ", Minibatch loss= " + "{:.6f}".format(loss) + ", Training Accuracy= " + "{:.5f}".format(acc))
-                    print("fc6 weights:", sess.run(fc6_weights))
+                    #print("fc6 weights:", sess.run(fc6_weights))
                     #print("cell biases:", sess.run(cell_biases))
                     batch += 1
 
@@ -100,10 +102,11 @@ class MVModel(object):
                     test_imgs = self.build_input(test_imgpaths[i*self.model_config.n_views : (i+1)*self.model_config.n_views])
                     acc = sess.run([self.rnn_model.accuracy],
                                   feed_dict={self.images:test_imgs, self.rnn_model.y:test_labels[i:i+1], self.cnn_model.train_mode:False})
+                    acc = acc[0]
                     if acc < 0.5:
                         f.write(test_imgpaths[self.model_config.n_views*i]+'\n')
                     total_acc += acc
-            print("accuracy in %d models: %f" %(len(test_labels), total_acc/len(test_labels)))
+            print("accuracy in %d models: %f using model %s" %(len(test_labels), total_acc/len(test_labels), test_model_path))
 
     def build_input(self, imgpaths):
         """

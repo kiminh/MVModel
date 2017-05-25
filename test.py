@@ -3,7 +3,7 @@ import numpy as np
 from model.mv_model import MVModel
 from model.config import TrainingConfig, ModelConfig
 
-tf.flags.DEFINE_string('test_model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/mvmodel', 'trained model path')
+tf.flags.DEFINE_string('test_model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/0.9_0.9_4/mvmodel.ckpt-5', 'trained model path')
 # tf.flags.DEFINE_boolean('train_inception', False, 'whether to train inception submodel varibales.')
 # tf.flags.DEFINE_integer('number_of_steps', 1000000, 'Number of training steps')
 # tf.flags.DEFINE_integer('log_every_n_steps', 1, 'Frequency at which loss and global step are logged')

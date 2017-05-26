@@ -3,4 +3,5 @@ trained_model/
 *.npy
 modelnet/
 
+ignore/
 .idea/

@@ -57,6 +57,8 @@ def show_model_features(index=0, type='tanh'):
 def normalization(min_v, max_v, v):
     return 1.0*(v-min_v)/(max_v-min_v)
 
+# 4, 7, 12
+# 64,65,66
 if __name__ == '__main__':
-    show_model_features(index=0)
+    show_model_features(index=66)
     plt.show()

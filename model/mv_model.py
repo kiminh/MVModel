@@ -11,7 +11,7 @@ from rnn_model import RNNModel
 #tf.flags.DEFINE_string('model_path', '~/PycharmProjects/TF/trained_model', 'path for saving model')
 #tf.flags.DEFINE_string('vgg_path', '/home/shangmingyang/PycharmProjects/TF/trained_model/vgg19.npy', 'trained model for vgg')
 
-tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/0.8_0.8_4/mvmodel.ckpt', 'path for saving model')
+tf.flags.DEFINE_string('model_path', '/home1/shangmingyang/data/3dmodel/trained_mvmodel/1.0_0.5_4/mvmodel.ckpt', 'path for saving model')
 tf.flags.DEFINE_string('vgg_path', '/home1/shangmingyang/models/vgg/vgg19.npy', 'trained model for vgg')
 tf.flags.DEFINE_string('modelnet_path', '/home3/lxh/modelnet/modelnet40v1_2', 'modelnet dir')
 

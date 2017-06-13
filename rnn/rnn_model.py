@@ -58,9 +58,9 @@ def RNN(x, weights, biases):
 def BiRNN(x, weights, biases):
     x = tf.unstack(x, n_steps, 1)
     #lstm_fw_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
-    lstm_fw_cell = rnn.GRUCell(n_hidden)
+    lstm_fw_cell = rnn.GRUCell(FLAGS.hidden_size)
     #lstm_bw_cell = rnn.BasicLSTMCell(n_hidden, forget_bias=1.0)
-    lstm_bw_cell = rnn.GRUCell(n_hidden)
+    lstm_bw_cell = rnn.GRUCell(FLAGS.hidden_size)
     try:
         outputs, _, _ = rnn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x, dtype=tf.float32)
     except Exception:

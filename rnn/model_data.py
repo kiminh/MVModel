@@ -29,7 +29,7 @@ class DataSet(object):
     def fcs(self):
         return self._fcs
 
-    def next_batch(self, batch_size, fake_data=False, shuffle=True):
+    def next_batch(self, batch_size, fake_data=False, shuffle=True, as_sequence=True):
         """Return the next `batch_size` examples from this data set."""
         if fake_data:
             fake_image = [1] * 784
@@ -67,13 +67,33 @@ class DataSet(object):
             end = self._index_in_epoch
             fcs_new_part = self._fcs[start:end]
             labels_new_part = self._labels[start:end]
-
-            return np.concatenate((fcs_rest_part, fcs_new_part), axis=0), np.concatenate(
-                (labels_rest_part, labels_new_part), axis=0)
+            if as_sequence:
+                return np.concatenate((fcs_rest_part, fcs_new_part), axis=0), self.batch_label2sequence(np.concatenate(
+                    (labels_rest_part, labels_new_part), axis=0))
+            else:
+                return np.concatenate((fcs_rest_part, fcs_new_part), axis=0), np.concatenate(
+                    (labels_rest_part, labels_new_part), axis=0)
         else:
             self._index_in_epoch += batch_size
             end = self._index_in_epoch
-            return self._fcs[start:end], self._labels[start:end]
+            if as_sequence:
+                return self._fcs[start:end], self.batch_label2sequence(self._labels[start:end])
+            else:
+                return self._fcs[start:end], self._labels[start:end]
+
+    def label2sequence(self, label_onehot):
+        label = np.argmax(label_onehot) + 1
+        sequence = []
+        for i in xrange(1, np.shape(label_onehot)[0]+1):
+            if label != i:
+                sequence.append(2*i)
+            else:
+                sequence.append(2*i-1)
+        return np.array(sequence)
+
+    def batch_label2sequence(self, labels_onehot):
+        return np.array([self.label2sequence(label_onehot) for label_onehot in labels_onehot])
+
 
 def read_data(data_dir, n_views=12):
     print("read data from %s" %data_dir)
@@ -143,10 +163,18 @@ def run_readdata_demo(data_dir):
     print("shape:", np.shape(label1))
     # print("shape:", np.shape(batch1))
 
+def label2sequence(label_onehot):
+    label = np.argmax(label_onehot) + 1
+    sequence = []
+    for i in xrange(1, np.shape(label_onehot)[0]+1):
+        if label != i:
+            sequence.append(2*i)
+        else:
+            sequence.append(2*i-1)
+    return np.array(sequence)
+
 if __name__ == '__main__':
-    # _fake_write_data(FLAGS.data_dir) #only run once to fake data
     run_readdata_demo(FLAGS.data_dir)
-    #data = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
-    #print("shape:", np.shape(data))
-    #print(data)
-    #data_tranfer()
+    # label_onehot = np.zeros([40])
+    # label_onehot[2] = 1
+    # print label2sequence(label_onehot)

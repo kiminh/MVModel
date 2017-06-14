@@ -25,7 +25,7 @@ class SequenceRNNModel(object):
 
     def build_model(self):
         # encoder
-        self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input])
+        self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
         _, encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
         # decoder
         self.decoder_inputs, self.target_weights = [], []
@@ -43,12 +43,21 @@ class SequenceRNNModel(object):
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
         # self.accuracy =
-
-        self.preds = self.RNN(self.x, self.fc_w, self.fc_b)
-
-        self.output_label = tf.argmax(self.pred, 1)
-        self.correct_pred = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.y, 1))
-        self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
+        # output_labels = [tf.argmax(output, 1) for output in self.outputs] #[[batch-size]]
+        # for j in xrange(tf.get_shape(output_labels[0])[0]):
+        #     max_yes_index, max_yes_prob = -1, 0.0
+        #     for i in xrange(len(output_labels)):
+        #         if output_labels[i][j] % 2 == 1 and output
+        #
+        # for i in xrange(len(self.output_labels)):
+        #
+        #
+        #
+        # self.preds = self.RNN(self.x, self.fc_w, self.fc_b)
+        #
+        # self.output_label = tf.argmax(self.pred, 1)
+        # self.correct_pred = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.y, 1))
+        # self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
 
     def encoder_RNN(self, encoder_inputs):
         """
@@ -61,6 +70,30 @@ class SequenceRNNModel(object):
         cell = self.single_cell(self.encoder_n_hidden)
         outputs, states = rnn.static_rnn(cell, encoder_input_dropout, dtype=tf.float32)
         return outputs, states
+
+    def step(self, session, encoder_inputs, decoder_inputs, target_weights, forward_only):
+        input_feed = {}
+        batch_size = 10
+        # TODO encoder
+        input_feed[self.encoder_inputs.name] = encoder_inputs
+        for i in xrange(self.decoder_n_steps):
+            input_feed[self.decoder_inputs[i].name] = decoder_inputs[i]
+            input_feed[self.target_weights[i].name] = target_weights[i]
+
+        last_target = self.decoder_inputs[self.decoder_n_steps].name
+        input_feed[last_target] = np.zeros([batch_size], dtype=np.int32)
+
+        if not forward_only:
+            output_feed = [self.optimizer, self.cost]
+        else:
+            output_feed = [self.cost]
+            for i in xrange(self.decoder_n_steps):
+                output_feed.append(self.outputs[i])
+        outputs = session.run(output_feed, input_feed)
+        if not forward_only:
+            return outputs[0], outputs[1], None
+        else:
+            return None, outputs[0], outputs[1:]
 
     def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
         """

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import data_utils
 
 from tensorflow.contrib.learn.python.learn.datasets import base
 
@@ -83,7 +84,7 @@ class DataSet(object):
 
     def label2sequence(self, label_onehot):
         label = np.argmax(label_onehot) + 1
-        sequence = []
+        sequence = [data_utils.GO_ID]
         for i in xrange(1, np.shape(label_onehot)[0]+1):
             if label != i:
                 sequence.append(2*i)

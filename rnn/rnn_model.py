@@ -13,6 +13,7 @@ tf.flags.DEFINE_string('acc_result_file', '/home1/shangmingyang/data/3dmodel/acc
 
 tf.flags.DEFINE_float('keep_prob', 1.0, 'keep probability for rnn cell')
 tf.flags.DEFINE_integer("hidden_size", 128, "rnn cell hidden state")
+tf.flags.DEFINE_float("forget_biases", 1.0, "lstm cell forget biases")
 
 # mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
@@ -49,7 +50,7 @@ biases = {
 def RNN(x, weights, biases):
     x = tf.unstack(x, n_steps, 1)
     x_dropout = [tf.nn.dropout(xi, FLAGS.keep_prob) for xi in x]
-    lstm_cell = rnn.BasicLSTMCell(FLAGS.hidden_size)
+    lstm_cell = rnn.BasicLSTMCell(FLAGS.hidden_size, forget_bias=FLAGS.forget_biases)
     #lstm_cell = rnn.GRUCell(FLAGS.hidden_size)
     outputs, states = rnn.static_rnn(lstm_cell, x_dropout, dtype=tf.float32)
 
@@ -90,7 +91,7 @@ def main(unused_argv):
 
     #saver = tf.train.Saver()
 
-    acc_test_list = [FLAGS.keep_prob, FLAGS.hidden_size]
+    acc_test_list = [FLAGS.keep_prob, FLAGS.hidden_size, FLAGS.forget_biases]
 
     # Launch the graph
     config = tf.ConfigProto()
@@ -102,7 +103,7 @@ def main(unused_argv):
         step = 1
         # Keep training until reach max iterations
         while step * batch_size <= training_iters:
-            batch_x, batch_y = model_data.train.next_batch(batch_size)
+            batch_x, batch_y = model_data.train.next_batch(batch_size, as_sequence=False)
             # Reshape data to get 28 seq of 28 elements
             batch_x = batch_x.reshape((batch_size, n_steps, n_input))
             # Run optimization op (backprop)

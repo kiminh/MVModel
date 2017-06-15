@@ -192,7 +192,7 @@ class SequenceRNNModel(object):
             for i in xrange(len(output_labels)):
                 if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
                     max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
-            predict_labels.append(max_yes_index)
+            predict_labels.append((max_yes_index+1)/2) #convert index to label
         predict_labels = np.array(predict_labels)
         return predict_labels
 

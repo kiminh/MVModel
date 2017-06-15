@@ -30,6 +30,9 @@ class DataSet(object):
     def fcs(self):
         return self._fcs
 
+    def size(self):
+        return self._num_examples
+
     def next_batch(self, batch_size, fake_data=False, shuffle=True, as_sequence=True):
         """Return the next `batch_size` examples from this data set."""
         if fake_data:

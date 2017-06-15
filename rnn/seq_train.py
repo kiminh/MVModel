@@ -27,7 +27,7 @@ n_classes = 40 # model_data total classes (0-9 digits)
 
 def main(unused_argv):
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 40, 128, 40, None)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=batch_size)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         init = tf.global_variables_initializer()
@@ -39,18 +39,15 @@ def main(unused_argv):
             while batch * batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(batch_size)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((batch_size, n_steps, n_input))
-                batch_weights = [np.ones(batch_size) for _ in xrange(n_classes)]
-                sess.run(seq_rnn_model.cost, feed_dict={seq_rnn_model.encoder_inputs:batch_encoder_inputs, seq_rnn_model.decoder_inputs:batch_decoder_inputs, seq_rnn_model.target_weights: batch_weights})
+                batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs)
+                _, loss, outputs = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights)
+                print("epoch %d batch %d: loss=%f" %(epoch, batch, loss))
                 batch += 1
             if epoch % display_epoch == 0:
-                print("epoch %d: " %(epoch))
+                print("epoch %d:display" %(epoch))
             if epoch % save_epoch == 0:
-                print("epoch %d:" %(epoch))
+                print("epoch %d:save" %(epoch))
             epoch += 1
-
-
-
-
 
 if __name__ == '__main__':
     tf.app.run()

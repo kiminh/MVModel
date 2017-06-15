@@ -5,7 +5,7 @@ import numpy as np
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
-                 decoder_n_input, decoder_n_steps, decoder_n_hidden, output_projection=None, batch_size=10, decoder_embedding_size=256,
+                 decoder_n_input, decoder_n_steps, decoder_n_hidden, output_projection=None, batch_size=10,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True, use_lstm=True):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
@@ -13,7 +13,7 @@ class SequenceRNNModel(object):
         self.n_classes, self.decoder_symbols_size = n_classes, n_classes * 2 + 1
         self.batch_size = batch_size
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
-        self.use_lstm, self.decoder_embedding_size, self.output_projection = use_lstm, decoder_embedding_size, output_projection
+        self.use_lstm, self.decoder_embedding_size, self.output_projection = use_lstm, decoder_n_hidden, output_projection
         if is_training:
             self.feed_previous = False
         else:

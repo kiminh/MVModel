@@ -30,6 +30,7 @@ def main(unused_argv):
     seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=batch_size)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
+        saver = tf.train.Saver()
         init = tf.global_variables_initializer()
         sess.run(init)
 
@@ -39,15 +40,39 @@ def main(unused_argv):
             while batch * batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(batch_size)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((batch_size, n_steps, n_input))
-                batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs)
+                batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=batch_size)
                 _, loss, outputs = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights)
-                print("epoch %d batch %d: loss=%f" %(epoch, batch, loss))
+                predict_labels = seq_rnn_model.predict(outputs)
+                target_labels = get_target_labels(batch_decoder_inputs)
+                acc = accuracy(predict_labels, target_labels)
+                print("epoch %d batch %d: loss=%f, acc=%f" %(epoch, batch, loss, acc))
                 batch += 1
-            if epoch % display_epoch == 0:
-                print("epoch %d:display" %(epoch))
+            # if epoch % display_epoch == 0:
+            #     print("epoch %d:display" %(epoch))
             if epoch % save_epoch == 0:
-                print("epoch %d:save" %(epoch))
+                # do test using test dataset
+                test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size())
+                test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
+                test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs, test_decoder_inputs, batch_size=data.test.size())
+                _, _, outputs = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True) # don't do optimize
+                predict_labels = seq_rnn_model.predict(outputs)
+                target_labels = get_target_labels(test_decoder_inputs)
+                acc = accuracy(predict_labels, target_labels)
+                print("epoch %d:save, acc=%f" %(epoch, acc))
             epoch += 1
+
+def get_target_labels(seq_labels):
+    target_labels = []
+    for i in xrange(np.shape(seq_labels)[0]): #loop batch_size
+        for j in xrange(np.shape(seq_labels)[1]): #loop label
+            if seq_labels[i][j] % 2 == 1:
+                target_labels.append((seq_labels[i][j]+1)/2)
+                break
+    return target_labels
+
+def accuracy(predict, target):
+    return np.mean(np.equal(predict, target))
+
 
 if __name__ == '__main__':
     tf.app.run()

@@ -162,9 +162,10 @@ def run_readdata_demo(data_dir):
     train_data = model_data.train
     test_data = model_data.test
     fc1, label1 = test_data.next_batch(2)
-    print("fc1:", np.shape(fc1))
+    # print("fc1:", np.shape(fc1))
     print("label1:", label1)
     print("shape:", np.shape(label1))
+    print("target", get_target_labels(label1))
     # print("shape:", np.shape(batch1))
 
 def label2sequence(label_onehot):
@@ -176,6 +177,15 @@ def label2sequence(label_onehot):
         else:
             sequence.append(2*i-1)
     return np.array(sequence)
+
+def get_target_labels(seq_labels):
+    target_labels = []
+    for i in xrange(np.shape(seq_labels)[0]): #loop batch_size
+        for j in xrange(np.shape(seq_labels)[1]): #loop label
+            if seq_labels[i][j] % 2 == 1:
+                target_labels.append((seq_labels[i][j]+1)/2)
+                break
+    return target_labels
 
 if __name__ == '__main__':
     run_readdata_demo(FLAGS.data_dir)

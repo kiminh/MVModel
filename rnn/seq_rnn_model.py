@@ -111,6 +111,15 @@ class SequenceRNNModel(object):
         return outputs, states
 
     def step(self, session, encoder_inputs, decoder_inputs, target_weights, forward_only=False):
+        """
+        seq mvmodel step operation
+        :param session:
+        :param encoder_inputs:
+        :param decoder_inputs:
+        :param target_weights:
+        :param forward_only:
+        :return: Gridient, loss, logits,
+        """
         input_feed = {}
         input_feed[self.encoder_inputs.name] = encoder_inputs
         for i in xrange(self.decoder_n_steps):
@@ -123,15 +132,17 @@ class SequenceRNNModel(object):
 
         if not forward_only:
             output_ops = [self.optimizer, self.cost]
+            for i in xrange(self.decoder_n_steps-1):
+                output_ops.append(self.outputs[i])
         else:
             output_ops = [self.cost]
-            for i in xrange(self.decoder_n_steps):
+            for i in xrange(self.decoder_n_steps-1): #discard last output:we need only logits of 40 classes
                 output_ops.append(self.outputs[i])
         outputs = session.run(output_ops, input_feed)
         if not forward_only:
-            return outputs[0], outputs[1], None
+            return outputs[0], outputs[1], outputs[2:] #Gradient, loss, outputs
         else:
-            return None, outputs[0], outputs[1:]
+            return None, outputs[0], outputs[1:] #No gradient, loss, outputs
 
     def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
         """
@@ -148,13 +159,14 @@ class SequenceRNNModel(object):
 
         return [tf.matmul(output, fc_weights) + fc_biases for output in outputs]
 
-    def get_batch(self, batch_encoder_inputs, batch_labels):
+    def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
         """
         format batch to fit input placeholder
         :param batch_encoder_inputs:
         :param batch_labels:
         :return:
         """
+        self.batch_size = batch_size
         batch_decoder_inputs, batch_target_weights = [], []
         for j in xrange(np.shape(batch_labels)[1]):
             batch_decoder_inputs.append(np.array([batch_labels[i][j] for i in xrange(self.batch_size)]))
@@ -162,3 +174,26 @@ class SequenceRNNModel(object):
             batch_target_weights.append(ones_weights)
         batch_target_weights[-1] = np.zeros(self.batch_size)
         return batch_encoder_inputs, batch_decoder_inputs, batch_target_weights
+
+    def predict(self, logits):
+        """
+        predict labels and its prob
+        :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
+        :return: label,shape=[batch_size]
+        """
+        output_labels, output_labels_probs = [], []
+        for batch_logits in logits:
+            output_labels.append(tf.argmax(batch_logits, 1))
+            output_labels_probs.append(tf.reduce_max(batch_logits, 1))
+
+        predict_labels = []
+        for j in xrange(np.shape(logits)[1]):
+            max_yes_index, max_yes_prob = -1, 0.0
+            for i in xrange(len(output_labels)):
+                if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
+                    max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
+            predict_labels.append(max_yes_index)
+        predict_labels = np.array(predict_labels)
+        return predict_labels
+
+

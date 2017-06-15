@@ -5,7 +5,7 @@ import numpy as np
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
-                 decoder_n_input, decoder_n_steps, decoder_n_hidden, output_projection=None, batch_size=10,
+                 decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=10,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True, use_lstm=True):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
@@ -13,7 +13,7 @@ class SequenceRNNModel(object):
         self.n_classes, self.decoder_symbols_size = n_classes, n_classes * 2 + 1
         self.batch_size = batch_size
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
-        self.use_lstm, self.decoder_embedding_size, self.output_projection = use_lstm, decoder_n_hidden, output_projection
+        self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_n_hidden
         if is_training:
             self.feed_previous = False
         else:
@@ -35,15 +35,24 @@ class SequenceRNNModel(object):
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
         self.targets = [self.decoder_inputs[i+1] for i in xrange(self.decoder_n_steps)]
         decoder_cell = self.single_cell(self.decoder_n_hidden)
-        if self.output_projection is None:
+        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_symbols_size])
+        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_symbols_size])
+        self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
+        if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
         self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
-                decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.output_projection, feed_previous=self.feed_previous)
+                decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+        if not self.feed_previous:
+            for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
+                self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
+        else:
+            # do softmax
+            self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
+
         # cost function
         if self.is_training:
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
-        self.logits = self.outputs[:self.decoder_n_steps-1]
         # output label and accuracy
         # output_labels, output_labels_probs = [], []
         # for i in xrange(self.decoder_n_steps-1):
@@ -132,17 +141,13 @@ class SequenceRNNModel(object):
 
         if not forward_only:
             output_ops = [self.optimizer, self.cost]
-            for i in xrange(self.decoder_n_steps-1):
-                output_ops.append(self.outputs[i])
         else:
-            output_ops = [self.cost]
-            for i in xrange(self.decoder_n_steps-1): #discard last output:we need only logits of 40 classes
-                output_ops.append(self.outputs[i])
+            output_ops = self.logits
         outputs = session.run(output_ops, input_feed)
         if not forward_only:
-            return outputs[0], outputs[1], outputs[2:] #Gradient, loss, outputs
+            return outputs[0], outputs[1], None #Gradient, loss, no outputs
         else:
-            return None, outputs[0], outputs[1:] #No gradient, loss, outputs
+            return None, None, outputs #No gradient, no loss, outputs logits
 
     def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
         """

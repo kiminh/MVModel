@@ -39,11 +39,11 @@ def main(unused_argv):
             batch = 1
             while batch * batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(batch_size)
+                target_labels = get_target_labels(batch_decoder_inputs)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((batch_size, n_steps, n_input))
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=batch_size)
                 _, loss, outputs = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights)
                 predict_labels = seq_rnn_model.predict(outputs)
-                target_labels = get_target_labels(batch_decoder_inputs)
                 acc = accuracy(predict_labels, target_labels)
                 print("epoch %d batch %d: loss=%f, acc=%f" %(epoch, batch, loss, acc))
                 batch += 1
@@ -52,11 +52,11 @@ def main(unused_argv):
             if epoch % save_epoch == 0:
                 # do test using test dataset
                 test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size())
+                target_labels = get_target_labels(test_decoder_inputs)
                 test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
                 test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs, test_decoder_inputs, batch_size=data.test.size())
                 _, _, outputs = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True) # don't do optimize
                 predict_labels = seq_rnn_model.predict(outputs)
-                target_labels = get_target_labels(test_decoder_inputs)
                 acc = accuracy(predict_labels, target_labels)
                 print("epoch %d:save, acc=%f" %(epoch, acc))
             epoch += 1
@@ -71,6 +71,7 @@ def get_target_labels(seq_labels):
     return target_labels
 
 def accuracy(predict, target):
+    print(predict, target)
     return np.mean(np.equal(predict, target))
 
 

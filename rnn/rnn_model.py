@@ -53,8 +53,8 @@ def RNN(x, weights, biases):
     lstm_cell = rnn.BasicLSTMCell(FLAGS.hidden_size, forget_bias=FLAGS.forget_biases)
     #lstm_cell = rnn.GRUCell(FLAGS.hidden_size)
     outputs, states = rnn.static_rnn(lstm_cell, x_dropout, dtype=tf.float32)
-
-    return tf.matmul(outputs[-1], weights['out']) + biases['out']
+    equal_output_hidden = tf.equal(outputs[-1], states)
+    return tf.matmul(outputs[-1], weights['out']) + biases['out'], equal_output_hidden
 
 def BiRNN(x, weights, biases):
     x = tf.unstack(x, n_steps, 1)
@@ -73,7 +73,7 @@ def main(unused_argv):
     y = tf.placeholder("float", [None, n_classes])
     p = tf.placeholder("float", shape=())
 
-    pred = RNN(x, weights, biases)
+    pred, equal_output_hidden = RNN(x, weights, biases)
     #pred = BiRNN(x, weights, biases)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
@@ -85,6 +85,7 @@ def main(unused_argv):
     # Evaluate model
     correct_pred = tf.equal(tf.argmax(pred,1), tf.argmax(y,1))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+    output_acc = tf.reduce_mean(tf.cast(equal_output_hidden, tf.float32))
 
     # Initializing the variables
     init = tf.global_variables_initializer()
@@ -110,12 +111,12 @@ def main(unused_argv):
             sess.run(optimizer, feed_dict={x: batch_x, y: batch_y, p: FLAGS.keep_prob})
             if step % display_step == 0:
                 # Calculate batch accuracy
-                acc = sess.run(accuracy, feed_dict={x: batch_x, y: batch_y, p: 1.0})
+                acc, equal = sess.run([accuracy, equal_output_hidden], feed_dict={x: batch_x, y: batch_y, p: 1.0})
                 # Calculate batch loss
                 loss = sess.run(cost, feed_dict={x: batch_x, y: batch_y})
                 print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + \
                     "{:.6f}".format(loss) + ", Training Accuracy= " + \
-                    "{:.5f}".format(acc))
+                    "{:.5f}".format(acc) + ", outputEqualHidden=%f"%(equal))
             if step % save_step == 0 and need_save:
                 #do test
                 test_data = model_data.test.fcs.reshape((-1, n_steps, n_input))

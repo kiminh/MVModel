@@ -40,6 +40,10 @@ class SequenceRNNModel(object):
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
+        constant_embedding = np.ones([self.decoder_symbols_size, 1], dtype=np.float32)
+        for i in xrange(self.decoder_symbols_size):
+            constant_embedding[i] = np.array([i], dtype=np.float32)
+        self.fake_embedding =tf.constant(constant_embedding)
         self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state, decoder_cell)
         # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
         #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
@@ -113,12 +117,14 @@ class SequenceRNNModel(object):
             if output_projection is not None:
                 prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
             prev_symbol = tf.argmax(prev, 1)
-            return prev_symbol
+            emb_prev = tf.nn.embedding_lookup(self.fake_embedding, prev_symbol)
+            return emb_prev
         return loop_function
 
     def noembedding_rnn_decoder(self, decoder_inputs, init_state, cell):
         loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
-        return rnn_decoder(decoder_inputs, init_state, cell, loop_function=loop_function)
+        emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
+        return rnn_decoder(emb_inp, init_state, cell, loop_function=loop_function)
 
     def encoder_RNN(self, encoder_inputs):
         """

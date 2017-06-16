@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
-from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss
+from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder
 import numpy as np
 
 class SequenceRNNModel(object):
@@ -40,8 +40,9 @@ class SequenceRNNModel(object):
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
-        self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
-                decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+        self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state, decoder_cell)
+        # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
+        #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
@@ -106,6 +107,18 @@ class SequenceRNNModel(object):
         # self.output_label = tf.argmax(self.pred, 1)
         # self.correct_pred = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.y, 1))
         # self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
+
+    def _extract_argmax(self, output_projection=None):
+        def loop_function(prev, _):
+            if output_projection is not None:
+                prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
+            prev_symbol = tf.argmax(prev, 1)
+            return prev_symbol
+        return loop_function
+
+    def noembedding_rnn_decoder(self, decoder_inputs, init_state, cell):
+        loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
+        return rnn_decoder(decoder_inputs, init_state, cell, loop_function=loop_function)
 
     def encoder_RNN(self, encoder_inputs):
         """

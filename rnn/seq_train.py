@@ -6,8 +6,8 @@ import data_utils
 import model_data
 
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
-tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/seq_mvmodel.ckpt-100', 'trained mvmodel path')
+tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/baisc/seq_mvmodel.ckpt", "file path to save model")
+tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 
 FLAGS = tf.flags.FLAGS
@@ -18,9 +18,11 @@ batch_size = 10
 display_step = 100
 save_step =  3183 * 1
 need_save = True
-training_epoches = 100
+
+
+training_epoches = 500
 display_epoch = 1
-save_epoch = 10
+save_epoch = 20
 
 # Network Parameters
 n_steps = 12 # timesteps
@@ -39,7 +41,7 @@ def train():
     seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=batch_size, is_training=True)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
-        saver = tf.train.Saver(max_to_keep=10)
+        saver = tf.train.Saver(max_to_keep=25)
         init = tf.global_variables_initializer()
         sess.run(init)
 

@@ -42,10 +42,10 @@ class SequenceRNNModel(object):
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
         self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
                 decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
-        if not self.feed_previous:
-            for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
-                self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
-        else:
+        # do wx+b for output, to generate decoder_symbols_size length
+        for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
+            self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
+        if self.feed_previous:
             # do softmax
             self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
 
@@ -186,10 +186,11 @@ class SequenceRNNModel(object):
         :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
         :return: label,shape=[batch_size]
         """
+        print("logits[0] shape=", np.shape(logits[0]), ",value=", logits[0])
         output_labels, output_labels_probs = [], []
         for batch_logits in logits:
-            output_labels.append(tf.argmax(batch_logits, 1))
-            output_labels_probs.append(tf.reduce_max(batch_logits, 1))
+            output_labels.append(np.argmax(batch_logits, 1))
+            output_labels_probs.append(np.amax(batch_logits, 1))
 
         predict_labels = []
         for j in xrange(np.shape(logits)[1]):

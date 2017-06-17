@@ -180,7 +180,7 @@ class SequenceRNNModel(object):
         batch_target_weights[-1] = np.zeros(self.batch_size)
         return batch_encoder_inputs, batch_decoder_inputs, batch_target_weights
 
-    def predict(self, logits):
+    def predict(self, logits, min_no=True, all_min_no=True):
         """
         predict labels and its prob
         :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
@@ -194,12 +194,20 @@ class SequenceRNNModel(object):
 
         predict_labels = []
         for j in xrange(np.shape(logits)[1]):
-            max_yes_index, max_yes_prob = -1, 0.0
+            max_yes_index, max_yes_prob, min_no_index, min_no_prob = -1, 0.0, -1, 1.0
             for i in xrange(len(output_labels)):
                 if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
                     max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
-            predict_labels.append((max_yes_index+1)/2) #convert index to label
+                if output_labels[i][j] > 0 and output_labels[i][j] % 2 == 0 and output_labels_probs[i][j] < min_no_prob:
+                    min_no_index, min_no_prob = output_labels[i][j], output_labels_probs[i][j]
+            if all_min_no: # get class by min probability meaning not this class
+                predict_labels.append(min_no_index/2)
+            elif max_yes_index == -1 and min_no: # extract index with min probablity meaning no
+                predict_labels.append(min_no_index/2)
+            else:
+                predict_labels.append((max_yes_index+1)/2) #convert index to label
         predict_labels = np.array(predict_labels)
         return predict_labels
+
 
 

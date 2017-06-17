@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.spatial.distance import euclidean, cosine
+
 
 random_image = np.random.random([100, 500])
 # print(np.shape(random_image))
@@ -17,12 +19,12 @@ random_image = np.random.random([100, 500])
 # ax1.imshow(linear1, cmap='gray')
 # plt.show()
 
-features_relu = np.load('../ignore/test_12p_vgg19_29epo_feature.npy')
-features_tanh = np.load('../ignore/test_12p_vgg19_epo29_tanh7_feature.npy')
-
+embeddings_file = '../ignore/data/embedding.npy'
 
 def show_model_features(index=0, type='tanh', normalize=True):
     # do transformation
+    features_relu = np.load('../ignore/test_12p_vgg19_29epo_feature.npy')
+    features_tanh = np.load('../ignore/test_12p_vgg19_epo29_tanh7_feature.npy')
     data_relu = features_relu[index]
     data_tanh = features_tanh[index]
 
@@ -59,8 +61,25 @@ def show_model_features(index=0, type='tanh', normalize=True):
 def normalization(min_v, max_v, v):
     return 1.0*(v-min_v)/(max_v-min_v)
 
+def show_embedding(embedding_file, distance=euclidean):
+    embeddings = np.load(embedding_file)
+    class_embeddings = embeddings[1::2]
+    n_class = class_embeddings.shape[0]
+    embedding_sim = []
+    for embedding_i in class_embeddings:
+        for embedding_j in class_embeddings:
+            embedding_sim.append(distance(embedding_i, embedding_j))
+
+    embedding_sim = np.reshape(np.array(embedding_sim), [n_class, n_class])
+    fig, ax = plt.subplots()
+    fig.suptitle(distance.__str__())
+    ax.imshow(embedding_sim, cmap='gray', interpolation='nearest')
+
 # 4, 7, 12
 # 64,65,66
 if __name__ == '__main__':
-    show_model_features(index=66, normalize=False)
+    # show_model_features(index=66, normalize=False)
+    # plt.show()
+    show_embedding(embeddings_file, distance=euclidean)
+    show_embedding(embeddings_file, distance=cosine)
     plt.show()

@@ -22,7 +22,7 @@ need_save = True
 
 training_epoches = 500
 display_epoch = 1
-save_epoch = 20
+save_epoch = 50
 
 # Network Parameters
 n_steps = 12 # timesteps
@@ -38,7 +38,7 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=batch_size, is_training=True)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 64, batch_size=batch_size, is_training=True)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=25)
@@ -75,7 +75,7 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=data.test.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 64, batch_size=data.test.size(), is_training=False)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()

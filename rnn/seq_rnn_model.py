@@ -196,8 +196,8 @@ class SequenceRNNModel(object):
             for i in xrange(np.shape(logits)[0]):
                 batch_logits = logits[i]
                 batch_size = np.shape(batch_logits)[0]
-                output_labels.append(np.array([i*2]*batch_size))
-                output_labels_probs.append(batch_logits[xrange(batch_size)][i*2])
+                output_labels.append(np.array([(i+1)*2]*batch_size))
+                output_labels_probs.append(batch_logits[np.arange(batch_size),(i+1)*2])
 
         predict_labels = []
         for j in xrange(np.shape(logits)[1]):

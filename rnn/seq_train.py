@@ -7,7 +7,7 @@ import model_data
 
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-400', 'trained mvmodel path')
+tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-500', 'trained mvmodel path')
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 
 FLAGS = tf.flags.FLAGS
@@ -38,7 +38,7 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 64, batch_size=batch_size, is_training=True)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=batch_size, is_training=True)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=25)
@@ -75,7 +75,7 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 64, batch_size=data.test.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=data.test.size(), is_training=False)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()

@@ -188,9 +188,16 @@ class SequenceRNNModel(object):
         """
         print("logits[0] shape=", np.shape(logits[0]), ",value=", logits[0])
         output_labels, output_labels_probs = [], []
-        for batch_logits in logits:
-            output_labels.append(np.argmax(batch_logits, 1))
-            output_labels_probs.append(np.amax(batch_logits, 1))
+        if not all_min_no:
+            for batch_logits in logits:
+                output_labels.append(np.argmax(batch_logits, 1))
+                output_labels_probs.append(np.amax(batch_logits, 1))
+        else:
+            for i in xrange(np.shape(logits)[0]):
+                batch_logits = logits[i]
+                batch_size = np.shape(batch_logits)[0]
+                output_labels.append(np.array([i*2]*batch_size))
+                output_labels_probs.append(batch_logits[xrange(batch_size)][i*2])
 
         predict_labels = []
         for j in xrange(np.shape(logits)[1]):

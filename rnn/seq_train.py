@@ -44,7 +44,8 @@ def train():
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=25)
         init = tf.global_variables_initializer()
-        sess.run(init)
+        #sess.run(init)
+        saver.restore(sess, FLAGS.seq_mvmodel_path)
 
         epoch = 1
         while epoch <= training_epoches:
@@ -62,7 +63,7 @@ def train():
             # if epoch % display_epoch == 0:
             #     print("epoch %d:display" %(epoch))
             if epoch % save_epoch == 0:
-                saver.save(sess, FLAGS.save_seq_mvmodel_path, global_step=epoch)
+                saver.save(sess, FLAGS.save_seq_mvmodel_path, global_step=epoch+500)
             #     # do test using test dataset
             #     test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size())
             #     target_labels = get_target_labels(test_decoder_inputs)

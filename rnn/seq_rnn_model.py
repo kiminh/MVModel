@@ -186,7 +186,6 @@ class SequenceRNNModel(object):
         :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
         :return: label,shape=[batch_size]
         """
-        print("logits[0] shape=", np.shape(logits[0]), ",value=", logits[0])
         output_labels, output_labels_probs = [], []
         if not all_min_no:
             for batch_logits in logits:

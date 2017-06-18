@@ -4,10 +4,12 @@ import numpy as np
 from seq_rnn_model import SequenceRNNModel
 import data_utils
 import model_data
+import csv
 
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-500', 'trained mvmodel path')
+tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 
 FLAGS = tf.flags.FLAGS
@@ -18,7 +20,6 @@ batch_size = 10
 display_step = 100
 save_step =  3183 * 1
 need_save = True
-
 
 training_epoches = 500
 display_epoch = 1
@@ -88,8 +89,12 @@ def test():
                                                                                                 batch_size=data.test.size())
         _, _, outputs = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
                                            forward_only=True)  # don't do optimize
-        predict_labels = seq_rnn_model.predict(outputs)
+        predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
+
+        with open(FLAGS.test_acc_file, 'a') as f:
+            w = csv.writer(f)
+            w.writerow([FLAGS.seq_mvmodel_path, acc])
         print("model:%s, acc=%f" % (FLAGS.seq_mvmodel_path, acc))
 
 
@@ -103,7 +108,6 @@ def get_target_labels(seq_labels):
     return target_labels
 
 def accuracy(predict, target):
-    print(predict, target)
     return np.mean(np.equal(predict, target))
 
 

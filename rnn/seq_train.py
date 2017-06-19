@@ -12,6 +12,20 @@ tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/se
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 
+# model parameter
+tf.flags.DEFINE_integer("training_epoches", 500, "total train epoches")
+tf.flags.DEFINE_integer("save_epoches", 50, "epoches can save")
+tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
+tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
+tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
+tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
+
+# training parameter
+tf.flags.DEFINE_integer("batch_size", 10, "training batch size")
+tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate")
+tf.flags.DEFINE_integer("n_max_keep_model", 10, "max number to save model")
+
+
 FLAGS = tf.flags.FLAGS
 
 learning_rate = 0.0001
@@ -39,10 +53,10 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=batch_size, is_training=True)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden, batch_size=FLAGS.batch_size, is_training=True)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
-        saver = tf.train.Saver(max_to_keep=10)
+        saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
         sess.run(init)
 
@@ -51,10 +65,10 @@ def train():
             batch = 1
             while batch * batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(batch_size)
-                target_labels = get_target_labels(batch_decoder_inputs)
+                # target_labels = get_target_labels(batch_decoder_inputs)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((batch_size, n_steps, n_input))
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=batch_size)
-                _, loss, outputs = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
+                _, loss, _, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
                 # predict_labels = seq_rnn_model.predict(outputs)
                 # acc = accuracy(predict_labels, target_labels)
                 print("epoch %d batch %d: loss=%f" %(epoch, batch, loss))
@@ -76,30 +90,28 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=data.train.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden, batch_size=data.test.size(), is_training=True)
+
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.seq_mvmodel_path)
-        print([v.name for v in tf.trainable_variables()])
-        train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-        #test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
-        #target_labels = get_target_labels(test_decoder_inputs)
-        #test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
-        train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
-        #test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
-        #                                                                                        test_decoder_inputs,
-        #                                                                                        batch_size=data.test.size())
-        train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
-                                                                                                train_decoder_inputs,
-                                                                                                batch_size=data.train.size())
-        _, _, outputs_train, hidden_train = seq_rnn_model.step(sess, train_encoder_inputs, train_decoder_inputs, train_target_weights,
-                                            forward_only=True)
+        # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
+        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+        target_labels = get_target_labels(test_decoder_inputs)
+        test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
+        #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
+        test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
+                                                                                                test_decoder_inputs,
+                                                                                                batch_size=data.test.size())
+        # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
+                                                                                                # train_decoder_inputs,
+                                                                                                # batch_size=data.train.size())
+        # _, _, outputs_train, hidden_train = seq_rnn_model.step(sess, train_encoder_inputs, train_decoder_inputs, train_target_weights,
+        #                                     forward_only=True)
         #np.save("hidden_feature_train_embedding", hidden_train)
-        #_, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
-        #                                   forward_only=True)  # don't do optimize
-        print(np.shape(outputs_train), np.shape(hidden_train))
-        np.save('hidden_feature_train_embedding', hidden_train)
+        _, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
+                                          forward_only=True)  # don't do optimize
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
 

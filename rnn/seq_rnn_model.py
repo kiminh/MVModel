@@ -29,7 +29,7 @@ class SequenceRNNModel(object):
     def build_model(self):
         # encoder
         self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
-        _, encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
+        _, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
         # decoder
         self.decoder_inputs = [tf.placeholder(tf.int32, shape=[None], name="decoder{0}".format(i)) for i in xrange(self.decoder_n_steps + 1)]
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
@@ -40,7 +40,7 @@ class SequenceRNNModel(object):
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
-        self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
+        self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state,
                 decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
@@ -142,12 +142,14 @@ class SequenceRNNModel(object):
         if not forward_only:
             output_ops = [self.optimizer, self.cost]
         else:
+            #output_ops = [self.logits, self.encoder_hidden_state]
             output_ops = self.logits
         outputs = session.run(output_ops, input_feed)
         if not forward_only:
-            return outputs[0], outputs[1], None #Gradient, loss, no outputs
+            return outputs[0], outputs[1], None, None #Gradient, loss, no outputs, no encoder_hidden
         else:
-            return None, None, outputs #No gradient, no loss, outputs logits
+            outputs_hidden = session.run(self.encoder_hidden_state, input_feed)
+            return None, None, outputs, outputs_hidden #No gradient, no loss, outputs logits, encoder_hidden
 
     def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
         """

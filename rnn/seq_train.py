@@ -8,7 +8,7 @@ import csv
 
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/seq_mvmodel.ckpt-200', 'trained mvmodel path')
+tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/seq_mvmodel.ckpt-200', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 
@@ -76,19 +76,30 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=data.test.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=data.train.size(), is_training=False)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.seq_mvmodel_path)
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size())
-        target_labels = get_target_labels(test_decoder_inputs)
-        test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
-        test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
-                                                                                                test_decoder_inputs,
-                                                                                                batch_size=data.test.size())
-        _, _, outputs = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
-                                           forward_only=True)  # don't do optimize
+        print([v.name for v in tf.trainable_variables()])
+        train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
+        #test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+        #target_labels = get_target_labels(test_decoder_inputs)
+        #test_encoder_inputs = test_encoder_inputs.reshape((-1, n_steps, n_input))
+        train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
+        #test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
+        #                                                                                        test_decoder_inputs,
+        #                                                                                        batch_size=data.test.size())
+        train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
+                                                                                                train_decoder_inputs,
+                                                                                                batch_size=data.train.size())
+        _, _, outputs_train, hidden_train = seq_rnn_model.step(sess, train_encoder_inputs, train_decoder_inputs, train_target_weights,
+                                            forward_only=True)
+        #np.save("hidden_feature_train_embedding", hidden_train)
+        #_, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
+        #                                   forward_only=True)  # don't do optimize
+        print(np.shape(outputs_train), np.shape(hidden_train))
+        np.save('hidden_feature_train_embedding', hidden_train)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
 

@@ -78,6 +78,13 @@ def test():
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
         saver.restore(sess, FLAGS.seq_mvmodel_path)
+
+        proj_w_var = [v for v in tf.trainable_variables() if 'proj_w' in v.name][0]
+        proj_w_value = sess.run(proj_w_var)
+        print("shape:", proj_w_value.shape)
+        np.save("proj_w", proj_w_value)
+        return
+
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
         test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)

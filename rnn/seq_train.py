@@ -39,13 +39,13 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=batch_size, is_training=True)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=batch_size, is_training=True)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=25)
         init = tf.global_variables_initializer()
-        #sess.run(init)
-        saver.restore(sess, FLAGS.seq_mvmodel_path)
+        sess.run(init)
+        #saver.restore(sess, FLAGS.seq_mvmodel_path)
 
         epoch = 1
         while epoch <= training_epoches:
@@ -77,7 +77,7 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(4096, 12, 64, 1, 41, 64, batch_size=data.test.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(4096, 12, 128, 1, 41, 128, batch_size=data.test.size(), is_training=False)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()

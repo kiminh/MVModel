@@ -46,11 +46,11 @@ class SequenceRNNModel(object):
         self.fake_embedding =tf.constant(constant_embedding)
 
         # attention
-        top_states = [tf.reshape(e, [-1, 1, self.decoder_symbols_size]) for e in self.encoder_hidden_state]
+        top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_hidden_state]
         self.attention_states = tf.concat(top_states, 1)
         # self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
         self.outputs, self.decoder_hidden_state = self.noembedding_attention_rnn_decoder(
-            self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
+            self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell)
         # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
         #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
@@ -134,7 +134,7 @@ class SequenceRNNModel(object):
 
     def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell):
         loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
-        emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
+        emb_inp = [tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs]
         return attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
 
     def encoder_RNN(self, encoder_inputs):

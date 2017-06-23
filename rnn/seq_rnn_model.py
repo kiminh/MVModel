@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
-from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder
+from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, attention_decoder
 import numpy as np
 
 class SequenceRNNModel(object):
@@ -29,7 +29,7 @@ class SequenceRNNModel(object):
     def build_model(self):
         # encoder
         self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
-        _, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
+        self.encoder_outputs, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
         # decoder
         self.decoder_inputs = [tf.placeholder(tf.int32, shape=[None], name="decoder{0}".format(i)) for i in xrange(self.decoder_n_steps + 1)]
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
@@ -44,7 +44,13 @@ class SequenceRNNModel(object):
         for i in xrange(self.decoder_symbols_size):
             constant_embedding[i] = np.array([i], dtype=np.float32)
         self.fake_embedding =tf.constant(constant_embedding)
-        self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
+
+        # attention
+        top_states = [tf.reshape(e, [-1, 1, self.decoder_symbols_size]) for e in self.encoder_hidden_state]
+        self.attention_states = tf.concat(top_states, 1)
+        # self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
+        self.outputs, self.decoder_hidden_state = self.noembedding_attention_rnn_decoder(
+            self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
         # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
         #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
@@ -125,6 +131,11 @@ class SequenceRNNModel(object):
         loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
         emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
         return rnn_decoder(emb_inp, init_state, cell, loop_function=loop_function)
+
+    def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell):
+        loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
+        emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
+        return attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
 
     def encoder_RNN(self, encoder_inputs):
         """

@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
 from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, attention_decoder
+from tensorflow.python.util import nest
+
 import numpy as np
 
 def linear(args, output_size, bias, bias_start=0.0):
@@ -19,9 +21,9 @@ def linear(args, output_size, bias, bias_start=0.0):
   Raises:
     ValueError: if some of the arguments has unspecified or wrong shape.
   """
-  if args is None or (tf.contrib.framework.nest.is_sequence(args) and not args):
+  if args is None or (nest.is_sequence(args) and not args):
     raise ValueError("`args` must be specified")
-  if not tf.contrib.framework.nest.is_sequence(args):
+  if not nest.is_sequence(args):
     args = [args]
 
   # Calculate the total size of arguments on dimension 1.
@@ -56,7 +58,6 @@ def linear(args, output_size, bias, bias_start=0.0):
           dtype=dtype,
           initializer=tf.constant_initializer(bias_start, dtype=dtype))
     return tf.nn.bias_add(res, biases)
-
 
 
 class SequenceRNNModel(object):
@@ -241,8 +242,8 @@ class SequenceRNNModel(object):
             def attention(query):
                 """Put attention masks on hidden using hidden_features and query."""
                 ds = []  # Results of attention reads will be stored here.
-                if tf.contrib.framework.nest.is_sequence(query):  # If the query is a tuple, flatten it.
-                    query_list = tf.contrib.framework.nest.flatten(query)
+                if nest.is_sequence(query):  # If the query is a tuple, flatten it.
+                    query_list = nest.flatten(query)
                     for q in query_list:  # Check that ndims == 2 if specified.
                         ndims = q.get_shape().ndims
                         if ndims:

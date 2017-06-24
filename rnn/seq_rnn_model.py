@@ -103,7 +103,7 @@ class SequenceRNNModel(object):
         self.fake_embedding =tf.constant(constant_embedding)
 
         # attention
-        top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_hidden_state]
+        top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
         self.attention_states = tf.concat(top_states, 1)
         # self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
         self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(

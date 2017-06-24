@@ -106,7 +106,7 @@ class SequenceRNNModel(object):
         top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_hidden_state]
         self.attention_states = tf.concat(top_states, 1)
         # self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
-        self.outputs, self.decoder_hidden_state = self.noembedding_attention_rnn_decoder(
+        self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(
             self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell)
         # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
         #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
@@ -242,6 +242,7 @@ class SequenceRNNModel(object):
             def attention(query):
                 """Put attention masks on hidden using hidden_features and query."""
                 ds = []  # Results of attention reads will be stored here.
+                att_weights = [] # attention weights given specific query
                 if nest.is_sequence(query):  # If the query is a tuple, flatten it.
                     query_list = nest.flatten(query)
                     for q in query_list:  # Check that ndims == 2 if specified.
@@ -257,11 +258,13 @@ class SequenceRNNModel(object):
                         s = tf.reduce_sum(v[a] * tf.tanh(hidden_features[a] + y),
                                                 [2, 3])
                         a = tf.nn.softmax(s)
+                        # att_weights.append(tf.reshape(a, [-1, attn_length]))
+                        att_weights.append(a)
                         # Now calculate the attention-weighted vector d.
                         d = tf.reduce_sum(
                             tf.reshape(a, [-1, attn_length, 1, 1]) * hidden, [1, 2])
                         ds.append(tf.reshape(d, [-1, attn_size]))
-                return ds
+                return ds, att_weights
 
             outputs = []
             prev = None
@@ -270,10 +273,11 @@ class SequenceRNNModel(object):
                 tf.zeros(
                     batch_attn_size, dtype=dtype) for _ in xrange(num_heads)
                 ]
+            attns_weights = []
             for a in attns:  # Ensure the second shape of attention vectors is set.
                 a.set_shape([None, attn_size])
             if initial_state_attention:
-                attns = attention(initial_state)
+                attns, _ = attention(initial_state)
             for i, inp in enumerate(decoder_inputs):
                 if i > 0:
                     tf.get_variable_scope().reuse_variables()
@@ -292,17 +296,18 @@ class SequenceRNNModel(object):
                 if i == 0 and initial_state_attention:
                     with tf.variable_scope(
                             tf.get_variable_scope(), reuse=True):
-                        attns = attention(state)
+                        attns, attns_weight = attention(state)
                 else:
-                    attns = attention(state)
+                    attns, attns_weight = attention(state)
 
                 with tf.variable_scope("AttnOutputProjection"):
                     output = linear([cell_output] + attns, output_size, True)
                 if loop_function is not None:
                     prev = output
                 outputs.append(output)
+                attns_weights.append(attns_weight)
 
-        return outputs, state
+        return outputs, state, attns_weights
 
 
     def encoder_RNN(self, encoder_inputs):
@@ -346,8 +351,8 @@ class SequenceRNNModel(object):
         if not forward_only:
             return outputs[0], outputs[1], None, None #Gradient, loss, no outputs, no encoder_hidden
         else:
-            outputs_hidden = session.run(self.encoder_hidden_state, input_feed)
-            return None, None, outputs, outputs_hidden #No gradient, no loss, outputs logits, encoder_hidden
+            attns_weights = session.run(self.attns_weights, input_feed)
+            return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
 
     def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
         """

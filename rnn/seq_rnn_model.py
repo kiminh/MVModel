@@ -1,7 +1,10 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
 from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, attention_decoder
+from tensorflow.contrib.rnn import core_rnn_cell_impl
 import numpy as np
+
+linear = core_rnn_cell_impl._linear
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
@@ -135,7 +138,118 @@ class SequenceRNNModel(object):
     def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell):
         loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
         emb_inp = [tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs]
-        return attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
+        return self.self_attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
+
+    def self_attention_decoder(self, decoder_inputs,
+                      initial_state,
+                      attention_states,
+                      cell,
+                      output_size=None,
+                      num_heads=1,
+                      loop_function=None,
+                      dtype=None,
+                      scope=None,
+                      initial_state_attention=False):
+        if not decoder_inputs:
+            raise ValueError("Must provide at least 1 input to attention decoder.")
+        if num_heads < 1:
+            raise ValueError("With less than 1 heads, use a non-attention decoder.")
+        if attention_states.get_shape()[2].value is None:
+            raise ValueError("Shape[2] of attention_states must be known: %s" %
+                             attention_states.get_shape())
+        if output_size is None:
+            output_size = cell.output_size
+
+        with tf.variable_scope(
+                        scope or "attention_decoder", dtype=dtype) as scope:
+            dtype = scope.dtype
+
+            batch_size = tf.shape(decoder_inputs[0])[0]  # Needed for reshaping.
+            attn_length = attention_states.get_shape()[1].value
+            if attn_length is None:
+                attn_length = tf.shape(attention_states)[1]
+            attn_size = attention_states.get_shape()[2].value
+
+            # To calculate W1 * h_t we use a 1-by-1 convolution, need to reshape before.
+            hidden = tf.reshape(attention_states,
+                                       [-1, attn_length, 1, attn_size])
+            hidden_features = []
+            v = []
+            attention_vec_size = attn_size  # Size of query vectors for attention.
+            for a in xrange(num_heads):
+                k = tf.get_variable("AttnW_%d" % a,
+                                                [1, 1, attn_size, attention_vec_size])
+                hidden_features.append(tf.nn.conv2d(hidden, k, [1, 1, 1, 1], "SAME"))
+                v.append(
+                    tf.get_variable("AttnV_%d" % a, [attention_vec_size]))
+
+            state = initial_state
+
+            def attention(query):
+                """Put attention masks on hidden using hidden_features and query."""
+                ds = []  # Results of attention reads will be stored here.
+                if tf.contrib.framework.nest.is_sequence(query):  # If the query is a tuple, flatten it.
+                    query_list = tf.contrib.framework.nest.flatten(query)
+                    for q in query_list:  # Check that ndims == 2 if specified.
+                        ndims = q.get_shape().ndims
+                        if ndims:
+                            assert ndims == 2
+                    query = tf.concat(query_list, 1)
+                for a in xrange(num_heads):
+                    with tf.variable_scope("Attention_%d" % a):
+                        y = linear(query, attention_vec_size, True)
+                        y = tf.reshape(y, [-1, 1, 1, attention_vec_size])
+                        # Attention mask is a softmax of v^T * tanh(...).
+                        s = tf.reduce_sum(v[a] * tf.tanh(hidden_features[a] + y),
+                                                [2, 3])
+                        a = tf.nn.softmax(s)
+                        # Now calculate the attention-weighted vector d.
+                        d = tf.reduce_sum(
+                            tf.reshape(a, [-1, attn_length, 1, 1]) * hidden, [1, 2])
+                        ds.append(tf.reshape(d, [-1, attn_size]))
+                return ds
+
+            outputs = []
+            prev = None
+            batch_attn_size = tf.stack([batch_size, attn_size])
+            attns = [
+                tf.zeros(
+                    batch_attn_size, dtype=dtype) for _ in xrange(num_heads)
+                ]
+            for a in attns:  # Ensure the second shape of attention vectors is set.
+                a.set_shape([None, attn_size])
+            if initial_state_attention:
+                attns = attention(initial_state)
+            for i, inp in enumerate(decoder_inputs):
+                if i > 0:
+                    tf.get_variable_scope().reuse_variables()
+                # If loop_function is set, we use it instead of decoder_inputs.
+                if loop_function is not None and prev is not None:
+                    with tf.variable_scope("loop_function", reuse=True):
+                        inp = loop_function(prev, i)
+                # Merge input and previous attentions into one vector of the right size.
+                input_size = inp.get_shape().with_rank(2)[1]
+                if input_size.value is None:
+                    raise ValueError("Could not infer input size from input: %s" % inp.name)
+                x = linear([inp] + attns, input_size, True)
+                # Run the RNN.
+                cell_output, state = cell(x, state)
+                # Run the attention mechanism.
+                if i == 0 and initial_state_attention:
+                    with tf.variable_scope(
+                            tf.get_variable_scope(), reuse=True):
+                        attns = attention(state)
+                else:
+                    attns = attention(state)
+
+                with tf.variable_scope("AttnOutputProjection"):
+                    output = linear([cell_output] + attns, output_size, True)
+                if loop_function is not None:
+                    prev = output
+                outputs.append(output)
+
+        return outputs, state
+
 
     def encoder_RNN(self, encoder_inputs):
         """

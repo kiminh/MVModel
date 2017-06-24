@@ -59,3 +59,8 @@ hidden=128,keep_prob=1.0,with attention
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-360,0.87250000000000005
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-380,0.875
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-400,0.87749999999999995
+hidden=256,keep_prob=1.0
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-10,0.89124999999999999
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-20,0.88624999999999998
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-30,0.88249999999999995
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-40,0.87875000000000003

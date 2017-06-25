@@ -116,6 +116,7 @@ class SequenceRNNModel(object):
         if self.feed_previous:
             # do softmax
             self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
+            self.attns_weights = self.attns_weights[:-1]
 
         # cost function
         if self.is_training:

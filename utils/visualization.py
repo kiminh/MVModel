@@ -106,6 +106,15 @@ def show_proj_w_dis(proj_file, distance=euclidean):
     cbar = fig.colorbar(cax, ticks=[min_dis, max_dis])
     cbar.ax.set_yticklabels([str(min_dis), str(max_dis)])
 
+def show_attention(attn_file, model_index=0):
+    attns = np.load(attn_file)
+    model_attn = attns[model_index]
+    fig, ax = plt.subplots()
+    fig.suptitle("attention for Model-%d"%(model_index))
+    cax = ax.imshow(model_attn, cmap="gray", interpolation="nearest")
+    cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
+    cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
+
 # 4, 7, 12
 # 64,65,66
 if __name__ == '__main__':
@@ -113,6 +122,7 @@ if __name__ == '__main__':
     # plt.show()
     # show_embedding_dis(embeddings_file, distance=euclidean)
     # show_embedding_dis(embeddings_file, distance=cosine)
-    show_proj_w_dis(proj_file, distance=euclidean)
-    show_proj_w_dis(proj_file, distance=cosine)
+    # show_proj_w_dis(proj_file, distance=euclidean)
+    # show_proj_w_dis(proj_file, distance=cosine)
+    show_attention('../ignore/data/attention_weights.npy', model_index=715)
     plt.show()

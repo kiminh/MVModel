@@ -128,6 +128,9 @@ def multiview(fcs, n_views=12):
     fcs2 = np.zeros(shape=[fcs.shape[0], n_views, fcs.shape[2]])
     for i in xrange(len(fcs)):
         fcs2[i] = fcs[i][:n_views]
+        # TODO debug for views connection on attention
+        if n_views == 12:
+            fcs2[i] = np.roll(fcs2[i], 2, axis=0)
     return fcs2
 
 def maxpooling(fcs):

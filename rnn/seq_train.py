@@ -8,7 +8,7 @@ import csv
 # data path parameter
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-500', 'trained mvmodel path')
+tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-70', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
@@ -102,7 +102,10 @@ def test():
         #np.save("hidden_feature_train_embedding", hidden_train)
         _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
                                           forward_only=True)  # don't do optimize
-        print("attention weights:", attns_weights.shape)
+        attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
+        #attns_weights = np.append(attns_weights, axis=0)
+        attns_weights = np.transpose(attns_weights, (1, 0, 2))
+        #print("attention weights:", attns_weights.shape)
         np.save("attention_weights", attns_weights)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)

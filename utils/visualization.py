@@ -124,5 +124,5 @@ if __name__ == '__main__':
     # show_embedding_dis(embeddings_file, distance=cosine)
     # show_proj_w_dis(proj_file, distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
-    show_attention('../ignore/data/attention_weights.npy', model_index=715)
+    show_attention('../ignore/data/attention_weights_shuffled.npy', model_index=0)
     plt.show()

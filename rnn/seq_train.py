@@ -19,6 +19,7 @@ tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
 tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
+tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
 
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')
@@ -36,7 +37,12 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden, learning_rate=FLAGS.learning_rate, keep_prob=FLAGS.keep_prob, batch_size=FLAGS.batch_size, is_training=True)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+                                     learning_rate=FLAGS.learning_rate,
+                                     keep_prob=FLAGS.keep_prob,
+                                     batch_size=FLAGS.batch_size,
+                                     is_training=True,
+                                     use_lstm=FLAGS.use_lstm)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
@@ -74,7 +80,10 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden, batch_size=data.test.size(), is_training=False)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+                                     batch_size=data.test.size(),
+                                     is_training=False,
+                                     use_lstm=FLAGS.use_lstm)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()

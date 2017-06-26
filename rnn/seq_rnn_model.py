@@ -132,22 +132,22 @@ class SequenceRNNModel(object):
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
 
-    def _extract_argmax(self, output_projection=None):
+    def _extract_argmax(self, embedding, output_projection=None):
         def loop_function(prev, _):
             if output_projection is not None:
                 prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
             prev_symbol = tf.argmax(prev, 1)
-            emb_prev = tf.nn.embedding_lookup(self.fake_embedding, prev_symbol)
+            emb_prev = tf.nn.embedding_lookup(embedding, prev_symbol)
             return emb_prev
         return loop_function
 
     def noembedding_rnn_decoder(self, decoder_inputs, init_state, cell):
-        loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
+        loop_function = self._extract_argmax(self.fake_embedding, self.decoder_output_projection) if self.feed_previous else None
         emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
         return rnn_decoder(emb_inp, init_state, cell, loop_function=loop_function)
 
     def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell):
-        loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
+        loop_function = self._extract_argmax(self.fake_embedding, self.decoder_output_projection) if self.feed_previous else None
         emb_inp = [tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs]
         return self.self_attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
 
@@ -177,8 +177,7 @@ class SequenceRNNModel(object):
             embedding = tf.get_variable("embedding",
                                                     [num_symbols, embedding_size])
             loop_function = self._extract_argmax(
-                embedding, output_projection,
-                update_embedding_for_previous) if feed_previous else None
+                embedding, output_projection) if feed_previous else None
             emb_inp = [
                 tf.nn.embedding_lookup(embedding, i) for i in decoder_inputs
                 ]
@@ -351,21 +350,6 @@ class SequenceRNNModel(object):
         else:
             attns_weights = session.run(self.attns_weights, input_feed)
             return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
-
-    def decoder_RNN(self, decoder_inputs, fc_weights, fc_biases):
-        """
-        Decoder RNN: decode input to each class probalities
-        :param decoder_inputs: view features vectors
-        :param fc_weights: fc weights used in each cell's output
-        :param fc_biases: fc biases used in each cell's output
-        :return: each step's output after fc
-        """
-        decoder_input_list = tf.unstack(decoder_inputs, self.decoder_n_steps, 1)
-        decoder_x_dropout = [tf.nn.dropout(x_i, self.keep_prob) for x_i in decoder_input_list]
-        cell = rnn.GRUCell(self.decoder_n_hidden)
-        outputs, states = rnn.static_rnn(cell, decoder_x_dropout, dtype=tf.float32)
-
-        return [tf.matmul(output, fc_weights) + fc_biases for output in outputs]
 
     def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
         """

@@ -63,7 +63,7 @@ def linear(args, output_size, bias, bias_start=0.0):
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
                  decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=10,
-                 learning_rate = 0.00001, keep_prob=1.0, is_training=True, use_lstm=True):
+                 learning_rate = 0.00001, keep_prob=1.0, is_training=True, use_lstm=True, use_embedding=True, use_attention=True):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
         n_classes = decoder_n_steps - 1
@@ -75,7 +75,7 @@ class SequenceRNNModel(object):
             self.feed_previous = False
         else:
             self.feed_previous = True
-        self.is_training = is_training
+        self.is_training, self.use_embedding, self.use_attention = is_training, use_embedding, use_attention
 
     def single_cell(self, hidden_size):
         if self.use_lstm:
@@ -97,84 +97,36 @@ class SequenceRNNModel(object):
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
-        constant_embedding = np.ones([self.decoder_symbols_size, 1], dtype=np.float32)
-        for i in xrange(self.decoder_symbols_size):
-            constant_embedding[i] = np.array([i], dtype=np.float32)
-        self.fake_embedding =tf.constant(constant_embedding)
-
-        # attention
-        top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
-        self.attention_states = tf.concat(top_states, 1)
-        # self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
-        self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(
-            self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell)
-        # self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], encoder_hidden_state,
-        #         decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+        if not self.use_embedding:
+            constant_embedding = np.ones([self.decoder_symbols_size, 1], dtype=np.float32)
+            for i in xrange(self.decoder_symbols_size):
+                constant_embedding[i] = np.array([i], dtype=np.float32)
+            self.fake_embedding =tf.constant(constant_embedding)
+        if self.use_attention:
+            # attention
+            top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
+            self.attention_states = tf.concat(top_states, 1)
+        if not self.use_embedding and not self.use_attention:
+            self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
+        elif not self.use_embedding and self.use_attention:
+            self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(
+                self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell)
+        elif self.use_embedding and not self.use_attention:
+            self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state,
+                decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
         if self.feed_previous:
             # do softmax
             self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
-            self.attns_weights = self.attns_weights[:-1]
+            if self.attns_weights is not None:
+                self.attns_weights = self.attns_weights[:-1]
 
         # cost function
         if self.is_training:
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
-        # output label and accuracy
-        # output_labels, output_labels_probs = [], []
-        # for i in xrange(self.decoder_n_steps-1):
-        #     output_logits = self.outputs[i]
-        #     output_labels.append(tf.argmax(output_logits, 1))
-        #     output_labels_probs.append(tf.reduce_max(output_logits, 1))
-        #
-        # predict_labels = []
-        # for j in xrange(self.batch_size):
-        #     max_yes_index, max_yes_prob = -1, 0.0
-        #     for i in xrange(len(output_labels)):
-        #         if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
-        #             max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
-        #     predict_labels.append(max_yes_index)
-        # predict_labels = np.array(predict_labels)
-        #
-        # target_labels = []
-        # print len(self.targets)
-        # for j in xrange(self.batch_size):
-        #     for i in xrange(len(self.targets)):
-        #         print self.targets[i][j]
-        #         if self.targets[i][j] % 2 == 1:
-        #             target_labels.append(self.targets[i][j])
-        #             break
-        # target_labels = np.array(target_labels)
-        #
-        # self.correct_pred = tf.equal(predict_labels, target_labels)
-        # self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
-
-
-
-
-
-
-
-
-
-        # self.accuracy =
-        # output_labels = [tf.argmax(output, 1) for output in self.outputs] #[[batch-size]]
-        # for j in xrange(tf.get_shape(output_labels[0])[0]):
-        #     max_yes_index, max_yes_prob = -1, 0.0
-        #     for i in xrange(len(output_labels)):
-        #         if output_labels[i][j] % 2 == 1 and output
-        #
-        # for i in xrange(len(self.output_labels)):
-        #
-        #
-        #
-        # self.preds = self.RNN(self.x, self.fc_w, self.fc_b)
-        #
-        # self.output_label = tf.argmax(self.pred, 1)
-        # self.correct_pred = tf.equal(tf.argmax(self.pred, 1), tf.argmax(self.y, 1))
-        # self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
 
     def _extract_argmax(self, output_projection=None):
         def loop_function(prev, _):

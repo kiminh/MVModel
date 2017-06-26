@@ -7,11 +7,16 @@ import model_data
 import csv
 # data path parameter
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
-tf.flags.DEFINE_string("save_seq_mvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_mvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
+tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
+tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
+tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
+tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
+tf.flags.DEFINE_boolean("use_embedding", True, "whether use embedding")
+tf.flags.DEFINE_boolean("use_attention", True, "whether use attention")
+
 tf.flags.DEFINE_integer("training_epoches", 200, "total train epoches")
 tf.flags.DEFINE_integer("save_epoches", 10, "epoches can save")
 tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
@@ -42,13 +47,14 @@ def train():
                                      keep_prob=FLAGS.keep_prob,
                                      batch_size=FLAGS.batch_size,
                                      is_training=True,
-                                     use_lstm=FLAGS.use_lstm)
+                                     use_lstm=FLAGS.use_lstm,
+                                     use_attention=FLAGS.use_attention,
+                                     use_embedding=FLAGS.use_embedding)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
         sess.run(init)
-        #saver.restore(sess, FLAGS.seq_mvmodel_path)
 
         epoch = 1
         while epoch <= FLAGS.training_epoches:
@@ -66,7 +72,7 @@ def train():
             # if epoch % display_epoch == 0:
             #     print("epoch %d:display" %(epoch))
             if epoch % FLAGS.save_epoches == 0:
-                saver.save(sess, FLAGS.save_seq_mvmodel_path, global_step=epoch)
+                saver.save(sess, get_modelpath(), global_step=epoch)
             #     # do test using test dataset
             #     test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size())
             #     target_labels = get_target_labels(test_decoder_inputs)
@@ -83,11 +89,13 @@ def test():
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
-                                     use_lstm=FLAGS.use_lstm)
+                                     use_lstm=FLAGS.use_lstm,
+                                     use_attention=FLAGS.use_attention,
+                                     use_embedding=FLAGS.use_embedding)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
-        saver.restore(sess, FLAGS.seq_mvmodel_path)
+        saver.restore(sess, get_modelpath())
 
         # proj_w_var = [v for v in tf.trainable_variables() if 'proj_w' in v.name][0]
         # proj_w_value = sess.run(proj_w_var)
@@ -121,8 +129,8 @@ def test():
 
         with open(FLAGS.test_acc_file, 'a') as f:
             w = csv.writer(f)
-            w.writerow([FLAGS.seq_mvmodel_path, acc])
-        print("model:%s, acc=%f" % (FLAGS.seq_mvmodel_path, acc))
+            w.writerow([get_modelpath(), acc])
+        print("model:%s, acc=%f" % (get_modelpath(), acc))
 
 
 def get_target_labels(seq_labels):
@@ -137,6 +145,15 @@ def get_target_labels(seq_labels):
 def accuracy(predict, target):
     return np.mean(np.equal(predict, target))
 
+def get_modelpath():
+    if FLAGS.use_embedding and FLAGS.train:
+        return FLAGS.seq_basicmvmodel_path
+    elif FLAGS.use_embedding and not FLAGS.train:
+        return FLAGS.save_seq_basicmvmodel_path
+    elif not FLAGS.use_embedding and FLAGS.train:
+        return FLAGS.save_seq_embeddingmvmodel_path
+    else:
+        return FLAGS.seq_embeddingmvmodel_path
 
 if __name__ == '__main__':
     tf.app.run()

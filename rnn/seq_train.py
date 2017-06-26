@@ -147,13 +147,13 @@ def accuracy(predict, target):
 
 def get_modelpath():
     if FLAGS.use_embedding and FLAGS.train:
-        return FLAGS.seq_basicmvmodel_path
-    elif FLAGS.use_embedding and not FLAGS.train:
-        return FLAGS.save_seq_basicmvmodel_path
-    elif not FLAGS.use_embedding and FLAGS.train:
         return FLAGS.save_seq_embeddingmvmodel_path
-    else:
+    elif FLAGS.use_embedding and not FLAGS.train:
         return FLAGS.seq_embeddingmvmodel_path
+    elif not FLAGS.use_embedding and FLAGS.train:
+        return FLAGS.save_seq_basicmvmodel_path
+    else:
+        return FLAGS.seq_basicmvmodel_path
 
 if __name__ == '__main__':
     tf.app.run()

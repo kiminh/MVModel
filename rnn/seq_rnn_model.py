@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib import rnn
-from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, attention_decoder
+from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, embedding_attention_decoder
 from tensorflow.python.util import nest
 
 import numpy as np
@@ -114,6 +114,10 @@ class SequenceRNNModel(object):
         elif self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state,
                 decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+        else:
+            self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_decoder(self.decoder_inputs[:self.decoder_n_steps],
+                self.encoder_hidden_state, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
+                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
@@ -146,6 +150,47 @@ class SequenceRNNModel(object):
         loop_function = self._extract_argmax(self.decoder_output_projection) if self.feed_previous else None
         emb_inp = [tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs]
         return self.self_attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
+
+    def self_embedding_attention_decoder(self, decoder_inputs,
+                                initial_state,
+                                attention_states,
+                                cell,
+                                num_symbols,
+                                embedding_size,
+                                num_heads=1,
+                                output_size=None,
+                                output_projection=None,
+                                feed_previous=False,
+                                update_embedding_for_previous=True,
+                                dtype=None,
+                                scope=None,
+                                initial_state_attention=False):
+        if output_size is None:
+            output_size = cell.output_size
+        if output_projection is not None:
+            proj_biases = tf.convert_to_tensor(output_projection[1], dtype=dtype)
+            proj_biases.get_shape().assert_is_compatible_with([num_symbols])
+
+        with tf.variable_scope(
+                        scope or "embedding_attention_decoder", dtype=dtype) as scope:
+
+            embedding = tf.get_variable("embedding",
+                                                    [num_symbols, embedding_size])
+            loop_function = self._extract_argmax(
+                embedding, output_projection,
+                update_embedding_for_previous) if feed_previous else None
+            emb_inp = [
+                tf.nn.embedding_lookup(embedding, i) for i in decoder_inputs
+                ]
+            return self.self_attention_decoder(
+                emb_inp,
+                initial_state,
+                attention_states,
+                cell,
+                output_size=output_size,
+                num_heads=num_heads,
+                loop_function=loop_function,
+                initial_state_attention=initial_state_attention)
 
     def self_attention_decoder(self, decoder_inputs,
                       initial_state,

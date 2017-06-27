@@ -63,7 +63,9 @@ def linear(args, output_size, bias, bias_start=0.0):
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
                  decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=10,
-                 learning_rate = 0.00001, keep_prob=1.0, is_training=True, use_lstm=True, use_embedding=True, use_attention=True):
+                 learning_rate = 0.00001, keep_prob=1.0, is_training=True,
+                 use_lstm=True, use_embedding=True, use_attention=True,
+                 num_heads=1):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
         n_classes = decoder_n_steps - 1
@@ -76,6 +78,8 @@ class SequenceRNNModel(object):
         else:
             self.feed_previous = True
         self.is_training, self.use_embedding, self.use_attention = is_training, use_embedding, use_attention
+        if self.use_attention:
+            self.num_heads = num_heads
 
     def single_cell(self, hidden_size):
         if self.use_lstm:
@@ -110,14 +114,14 @@ class SequenceRNNModel(object):
             self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
         elif not self.use_embedding and self.use_attention:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(
-                self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell)
+                self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, self.attention_states, decoder_cell, num_heads=self.num_heads)
         elif self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state,
                 decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         else:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_decoder(self.decoder_inputs[:self.decoder_n_steps],
                 self.encoder_hidden_state, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
-                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous, num_heads=self.num_heads)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
@@ -146,10 +150,10 @@ class SequenceRNNModel(object):
         emb_inp = (tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs)
         return rnn_decoder(emb_inp, init_state, cell, loop_function=loop_function)
 
-    def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell):
+    def noembedding_attention_rnn_decoder(self, decoder_inputs, init_state, attention_states, cell, num_heads=1):
         loop_function = self._extract_argmax(self.fake_embedding, self.decoder_output_projection) if self.feed_previous else None
         emb_inp = [tf.nn.embedding_lookup(self.fake_embedding, i) for i in decoder_inputs]
-        return self.self_attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function)
+        return self.self_attention_decoder(emb_inp, init_state, attention_states, cell, loop_function=loop_function, num_heads=num_heads)
 
     def self_embedding_attention_decoder(self, decoder_inputs,
                                 initial_state,

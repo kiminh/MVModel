@@ -26,6 +26,9 @@ tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
 tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
 
+# attention parameter
+tf.flags.DEFINE_integer("num_heads", 12, "Number of attention heads that read from attention_states")
+
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 tf.flags.DEFINE_integer("batch_size", 10, "training batch size")
@@ -49,7 +52,8 @@ def train():
                                      is_training=True,
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
-                                     use_embedding=FLAGS.use_embedding)
+                                     use_embedding=FLAGS.use_embedding,
+                                     num_heads=FLAGS.num_heads)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
@@ -91,7 +95,8 @@ def test():
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
-                                     use_embedding=FLAGS.use_embedding)
+                                     use_embedding=FLAGS.use_embedding,
+                                     num_heads=FLAGS.num_heads)
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()

@@ -108,7 +108,9 @@ class SequenceRNNModel(object):
             self.fake_embedding =tf.constant(constant_embedding)
         if self.use_attention:
             # attention
-            top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
+            # top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
+            # TODO use same output for decoder attention states
+            top_states = [tf.reshape(self.encoder_outputs[-1], [-1, 1, self.decoder_n_hidden]) for _ in xrange(len(self.encoder_outputs))]
             self.attention_states = tf.concat(top_states, 1)
         if not self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)

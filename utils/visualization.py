@@ -109,11 +109,29 @@ def show_proj_w_dis(proj_file, distance=euclidean):
 def show_attention(attn_file, model_index=0):
     attns = np.load(attn_file)
     model_attn = attns[model_index]
+    print(model_attn)
     fig, ax = plt.subplots()
-    fig.suptitle("attention for Model-%d"%(model_index))
+    fig.suptitle("%s-%d"%(attn_file[attn_file.rfind('/')+1:], model_index))
     cax = ax.imshow(model_attn, cmap="gray", interpolation="nearest")
     cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
     cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
+
+def show_attention2(attn_file, model_index=0):
+    attns = np.load(attn_file)
+    model_attn = attns[model_index]
+    classes, views = model_attn.shape[0], model_attn.shape[1]
+    for i in xrange(classes):
+        s = 0.0
+        for j in xrange(views):
+            s += (model_attn[i][j] * model_attn[i][j])
+        for j in xrange(views):
+            model_attn[i][j] = model_attn[i][j] * model_attn[i][j] / s
+    fig, ax = plt.subplots()
+    fig.suptitle("%s-%d" % (attn_file[attn_file.rfind('/') + 1:], model_index))
+    cax = ax.imshow(model_attn, cmap="gray", interpolation="nearest")
+    cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
+    cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
+
 
 # 4, 7, 12
 # 64,65,66
@@ -123,6 +141,8 @@ if __name__ == '__main__':
     # show_embedding_dis(embeddings_file, distance=euclidean)
     # show_embedding_dis(embeddings_file, distance=cosine)
     # show_proj_w_dis(proj_file, distance=euclidean)
+    # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
-    show_attention('../ignore/data/attention_weights_shuffled.npy', model_index=0)
+    # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
+    show_attention('../ignore/data/attention_weights_1view.npy', model_index=715)
     plt.show()

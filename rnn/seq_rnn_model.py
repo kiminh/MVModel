@@ -259,7 +259,19 @@ class SequenceRNNModel(object):
                         s = tf.reduce_sum(v[a] * tf.tanh(hidden_features[a] + y),
                                                 [2, 3])
                         a = tf.nn.softmax(s)
-                        # att_weights.append(tf.reshape(a, [-1, attn_length]))
+                        print("attention")
+                        try:
+                            np.save("attn_weights", a.eval(self.input_feed))
+                        except Exception as e:
+                            print(e)
+                        #a = tf.nn.l2_normalize(tf.multiply(s,s), 1)
+                        # s_square = tf.multiply(s, s)
+                        #s_square_sum = tf.expand_dims(tf.reduce_sum(s_square, axis=1), 1)
+                        #a = s_square / s_square_sum
+                        #s_sigmoid = tf.sigmoid(s)
+                        #s_sigmoid_sum = tf.expand_dims(tf.reduce_sum(s_sigmoid, axis=1), 1)
+                        #a = s_sigmoid / s_sigmoid_sum
+                        #a = tf.nn.l2_normalize(tf.sigmoid(s), 1)
                         att_weights.append(a)
                         # Now calculate the attention-weighted vector d.
                         d = tf.reduce_sum(
@@ -342,7 +354,7 @@ class SequenceRNNModel(object):
         # for target shift
         last_target = self.decoder_inputs[self.decoder_n_steps].name
         input_feed[last_target] = np.zeros([self.batch_size], dtype=np.int32)
-
+        self.input_feed = input_feed
         if not forward_only:
             output_ops = [self.optimizer, self.cost]
         else:

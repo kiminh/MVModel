@@ -134,8 +134,8 @@ class SequenceRNNModel(object):
         # cost function
         if self.is_training:
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
-            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
-
+            # self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
+            self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
     def _extract_argmax(self, embedding, output_projection=None):
         def loop_function(prev, _):
             if output_projection is not None:
@@ -260,7 +260,7 @@ class SequenceRNNModel(object):
                                                 [2, 3])
                         a = tf.nn.softmax(s)
                         # att_weights.append(tf.reshape(a, [-1, attn_length]))
-                        att_weights.append(a)
+                        att_weights.append(s)
                         # Now calculate the attention-weighted vector d.
                         d = tf.reduce_sum(
                             tf.reshape(a, [-1, attn_length, 1, 1]) * hidden, [1, 2])

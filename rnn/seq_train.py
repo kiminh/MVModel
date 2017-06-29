@@ -27,7 +27,7 @@ tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
 tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
 
 # attention parameter
-tf.flags.DEFINE_integer("num_heads", 12, "Number of attention heads that read from attention_states")
+tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read from attention_states")
 
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')

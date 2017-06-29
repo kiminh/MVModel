@@ -1,5 +1,5 @@
 import os
-checkpoint_file = "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/checkpoint"
+checkpoint_file = "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/checkpoint"
 with open(checkpoint_file) as f:
     data = f.readlines()[1:]
     data = [line.split(":")[1] for line in data]
@@ -9,4 +9,4 @@ with open(checkpoint_file) as f:
 print data
 
 for model_path in data:
-    os.system('python seq_train.py --train=False --seq_embeddingmvmodel_path=%s --test_acc_file=%s --n_hidden=%d --use_attention=%s --use_embedding=%s' %(model_path, 'embedding_seq_mvmodel.csv', 256, "True", "True"))
+    os.system('python seq_train.py --train=False --seq_basicmvmodel_path=%s --test_acc_file=%s --n_hidden=%d --use_attention=%s --use_embedding=%s --num_heads=%d' %(model_path, 'noembedding_seq_mvmodel.csv', 256, "True", "False", 1))

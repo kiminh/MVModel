@@ -4,6 +4,7 @@ import numpy as np
 from seq_rnn_model import SequenceRNNModel
 import data_utils
 import model_data
+import fake_data
 import csv
 # data path parameter
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
@@ -44,7 +45,7 @@ def main(unused_argv):
         test()
 
 def train():
-    data =  model_data.read_data(FLAGS.data_path)
+    data = fake_data.read_data(FLAGS.data_path)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
@@ -66,7 +67,7 @@ def train():
             while batch * FLAGS.batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(FLAGS.batch_size)
                 # target_labels = get_target_labels(batch_decoder_inputs)
-                batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
+                # batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=FLAGS.batch_size)
                 _, loss, _, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
                 # predict_labels = seq_rnn_model.predict(outputs)
@@ -89,7 +90,7 @@ def train():
             epoch += 1
 
 def test():
-    data = model_data.read_data(FLAGS.data_path)
+    data = fake_data.read_data(FLAGS.data_path)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
@@ -109,13 +110,15 @@ def test():
         # return
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+
+        test_size = 10
+        test_encoder_inputs, test_decoder_inputs = data.train.next_batch(test_size, shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
-        test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
+        # test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
-                                                                                                batch_size=data.test.size())
+                                                                                                batch_size=test_size)
         # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
                                                                                                 # train_decoder_inputs,
                                                                                                 # batch_size=data.train.size())

@@ -4,6 +4,7 @@ from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_lo
 from tensorflow.python.util import nest
 
 import numpy as np
+import copy
 
 def linear(args, output_size, bias, bias_start=0.0):
   """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
@@ -65,7 +66,7 @@ class SequenceRNNModel(object):
                  decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=10,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True,
                  use_lstm=True, use_embedding=True, use_attention=True,
-                 num_heads=1):
+                 num_heads=1, debug=True):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
         n_classes = decoder_n_steps - 1
@@ -80,6 +81,7 @@ class SequenceRNNModel(object):
         self.is_training, self.use_embedding, self.use_attention = is_training, use_embedding, use_attention
         if self.use_attention:
             self.num_heads = num_heads
+        self.debug = debug
 
     def single_cell(self, hidden_size):
         if self.use_lstm:
@@ -89,8 +91,9 @@ class SequenceRNNModel(object):
 
     def build_model(self):
         # encoder
-        self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
-        self.encoder_outputs, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
+        # self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
+        self.encoder_inputs = [self.encoder_inputs.append(tf.placeholder(tf.int32, shape=[None], name="encoder{0}".format(i))) for i in xrange(self.encoder_n_steps)]
+        # self.encoder_outputs, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
         # decoder
         self.decoder_inputs = [tf.placeholder(tf.int32, shape=[None], name="decoder{0}".format(i)) for i in xrange(self.decoder_n_steps + 1)]
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
@@ -108,11 +111,15 @@ class SequenceRNNModel(object):
             self.fake_embedding =tf.constant(constant_embedding)
         if self.use_attention:
             # attention
-            # top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
+            top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
             # TODO use same output for decoder attention states
-            top_states = [tf.reshape(self.encoder_outputs[-1], [-1, 1, self.decoder_n_hidden]) for _ in xrange(len(self.encoder_outputs))]
+            # top_states = [tf.reshape(self.encoder_outputs[-1], [-1, 1, self.decoder_n_hidden]) for _ in xrange(len(self.encoder_outputs))]
             self.attention_states = tf.concat(top_states, 1)
-        if not self.use_embedding and not self.use_attention:
+        if self.debug:
+            self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_seq2seq(self.encoder_inputs,
+                    self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_n_steps, self.decoder_n_steps, self.decoder_embedding_size,
+                                                                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
+        elif not self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
         elif not self.use_embedding and self.use_attention:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.noembedding_attention_rnn_decoder(
@@ -319,6 +326,99 @@ class SequenceRNNModel(object):
 
         return outputs, state, attns_weights
 
+    def self_embedding_attention_seq2seq(self, encoder_inputs,
+                                    decoder_inputs,
+                                    cell,
+                                    num_encoder_symbols,
+                                    num_decoder_symbols,
+                                    embedding_size,
+                                    num_heads=1,
+                                    output_projection=None,
+                                    feed_previous=False,
+                                    dtype=None,
+                                    scope=None,
+                                    initial_state_attention=False):
+        """Embedding sequence-to-sequence model with attention.
+
+        This model first embeds encoder_inputs by a newly created embedding (of shape
+        [num_encoder_symbols x input_size]). Then it runs an RNN to encode
+        embedded encoder_inputs into a state vector. It keeps the outputs of this
+        RNN at every step to use for attention later. Next, it embeds decoder_inputs
+        by another newly created embedding (of shape [num_decoder_symbols x
+        input_size]). Then it runs attention decoder, initialized with the last
+        encoder state, on embedded decoder_inputs and attending to encoder outputs.
+
+        Warning: when output_projection is None, the size of the attention vectors
+        and variables will be made proportional to num_decoder_symbols, can be large.
+
+        Args:
+          encoder_inputs: A list of 1D int32 Tensors of shape [batch_size].
+          decoder_inputs: A list of 1D int32 Tensors of shape [batch_size].
+          cell: core_rnn_cell.RNNCell defining the cell function and size.
+          num_encoder_symbols: Integer; number of symbols on the encoder side.
+          num_decoder_symbols: Integer; number of symbols on the decoder side.
+          embedding_size: Integer, the length of the embedding vector for each symbol.
+          num_heads: Number of attention heads that read from attention_states.
+          output_projection: None or a pair (W, B) of output projection weights and
+            biases; W has shape [output_size x num_decoder_symbols] and B has
+            shape [num_decoder_symbols]; if provided and feed_previous=True, each
+            fed previous output will first be multiplied by W and added B.
+          feed_previous: Boolean or scalar Boolean Tensor; if True, only the first
+            of decoder_inputs will be used (the "GO" symbol), and all other decoder
+            inputs will be taken from previous outputs (as in embedding_rnn_decoder).
+            If False, decoder_inputs are used as given (the standard decoder case).
+          dtype: The dtype of the initial RNN state (default: tf.float32).
+          scope: VariableScope for the created subgraph; defaults to
+            "embedding_attention_seq2seq".
+          initial_state_attention: If False (default), initial attentions are zero.
+            If True, initialize the attentions from the initial state and attention
+            states.
+
+        Returns:
+          A tuple of the form (outputs, state), where:
+            outputs: A list of the same length as decoder_inputs of 2D Tensors with
+              shape [batch_size x num_decoder_symbols] containing the generated
+              outputs.
+            state: The state of each decoder cell at the final time-step.
+              It is a 2D Tensor of shape [batch_size x cell.state_size].
+        """
+        with tf.variable_scope(
+                        scope or "embedding_attention_seq2seq", dtype=dtype) as scope:
+            dtype = scope.dtype
+            # Encoder.
+            encoder_cell = copy.deepcopy(cell)
+            encoder_cell = tf.EmbeddingWrapper(
+                encoder_cell,
+                embedding_classes=num_encoder_symbols,
+                embedding_size=embedding_size)
+            encoder_outputs, encoder_state = rnn.static_rnn(
+                encoder_cell, encoder_inputs, dtype=dtype)
+
+            # First calculate a concatenation of encoder outputs to put attention on.
+            top_states = [
+                tf.reshape(e, [-1, 1, cell.output_size]) for e in encoder_outputs
+                ]
+            attention_states = tf.concat(top_states, 1)
+
+            # Decoder.
+            output_size = None
+            if output_projection is None:
+                cell = rnn.core_rnn_cell.OutputProjectionWrapper(cell, num_decoder_symbols)
+                output_size = num_decoder_symbols
+
+            if isinstance(feed_previous, bool):
+                return self.self_embedding_attention_decoder(
+                    decoder_inputs,
+                    encoder_state,
+                    attention_states,
+                    cell,
+                    num_decoder_symbols,
+                    embedding_size,
+                    num_heads=num_heads,
+                    output_size=output_size,
+                    output_projection=output_projection,
+                    feed_previous=feed_previous,
+                    initial_state_attention=initial_state_attention)
 
     def encoder_RNN(self, encoder_inputs):
         """
@@ -364,7 +464,7 @@ class SequenceRNNModel(object):
             attns_weights = session.run(self.attns_weights, input_feed)
             return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
 
-    def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
+    def get_batch(self, batch_inputs, batch_labels, batch_size=10):
         """
         format batch to fit input placeholder
         :param batch_encoder_inputs:
@@ -372,8 +472,9 @@ class SequenceRNNModel(object):
         :return:
         """
         self.batch_size = batch_size
-        batch_decoder_inputs, batch_target_weights = [], []
+        batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = [], [], []
         for j in xrange(np.shape(batch_labels)[1]):
+            batch_encoder_inputs.append(np.array([batch_inputs[i][j] for i in xrange(self.batch_size)]))
             batch_decoder_inputs.append(np.array([batch_labels[i][j] for i in xrange(self.batch_size)]))
             ones_weights = np.ones(self.batch_size)
             batch_target_weights.append(ones_weights)

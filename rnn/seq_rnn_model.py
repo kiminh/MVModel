@@ -92,15 +92,15 @@ class SequenceRNNModel(object):
     def build_model(self):
         # encoder
         # self.encoder_inputs = tf.placeholder(tf.float32, [None, self.encoder_n_steps, self.encoder_n_input], name="encoder")
-        self.encoder_inputs = [self.encoder_inputs.append(tf.placeholder(tf.int32, shape=[None], name="encoder{0}".format(i))) for i in xrange(self.encoder_n_steps)]
+        self.encoder_inputs = [tf.placeholder(tf.int32, shape=[None], name="encoder{0}".format(i)) for i in xrange(self.encoder_n_steps)]
         # self.encoder_outputs, self.encoder_hidden_state = self.encoder_RNN(self.encoder_inputs)
         # decoder
         self.decoder_inputs = [tf.placeholder(tf.int32, shape=[None], name="decoder{0}".format(i)) for i in xrange(self.decoder_n_steps + 1)]
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
         self.targets = [self.decoder_inputs[i+1] for i in xrange(self.decoder_n_steps)]
         decoder_cell = self.single_cell(self.decoder_n_hidden)
-        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_symbols_size])
-        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_symbols_size])
+        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_n_steps])
+        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_n_steps])
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
@@ -109,7 +109,7 @@ class SequenceRNNModel(object):
             for i in xrange(self.decoder_symbols_size):
                 constant_embedding[i] = np.array([i], dtype=np.float32)
             self.fake_embedding =tf.constant(constant_embedding)
-        if self.use_attention:
+        if self.use_attention and not self.debug:
             # attention
             top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
             # TODO use same output for decoder attention states
@@ -117,7 +117,7 @@ class SequenceRNNModel(object):
             self.attention_states = tf.concat(top_states, 1)
         if self.debug:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_seq2seq(self.encoder_inputs,
-                    self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_n_steps, self.decoder_n_steps, self.decoder_embedding_size,
+                    self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_n_steps+1, self.decoder_n_steps, self.decoder_embedding_size,
                                                                 output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         elif not self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)
@@ -387,7 +387,7 @@ class SequenceRNNModel(object):
             dtype = scope.dtype
             # Encoder.
             encoder_cell = copy.deepcopy(cell)
-            encoder_cell = tf.EmbeddingWrapper(
+            encoder_cell = rnn.core_rnn_cell.EmbeddingWrapper(
                 encoder_cell,
                 embedding_classes=num_encoder_symbols,
                 embedding_size=embedding_size)
@@ -443,7 +443,8 @@ class SequenceRNNModel(object):
         :return: Gridient, loss, logits,
         """
         input_feed = {}
-        input_feed[self.encoder_inputs.name] = encoder_inputs
+        for i in xrange(self.encoder_n_steps):
+            input_feed[self.encoder_inputs[i].name] = encoder_inputs[i]
         for i in xrange(self.decoder_n_steps):
             input_feed[self.decoder_inputs[i].name] = decoder_inputs[i]
             input_feed[self.target_weights[i].name] = target_weights[i]
@@ -473,8 +474,9 @@ class SequenceRNNModel(object):
         """
         self.batch_size = batch_size
         batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = [], [], []
-        for j in xrange(np.shape(batch_labels)[1]):
+        for j in xrange(np.shape(batch_inputs)[1]):
             batch_encoder_inputs.append(np.array([batch_inputs[i][j] for i in xrange(self.batch_size)]))
+        for j in xrange(np.shape(batch_labels)[1]):
             batch_decoder_inputs.append(np.array([batch_labels[i][j] for i in xrange(self.batch_size)]))
             ones_weights = np.ones(self.batch_size)
             batch_target_weights.append(ones_weights)
@@ -487,10 +489,14 @@ class SequenceRNNModel(object):
         :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
         :return: label,shape=[batch_size]
         """
+        outputs = np.transpose(logits, (1,0,2))
+        output_labels = np.argmax(outputs, 2)
+        return output_labels
         output_labels, output_labels_probs = [], []
         if not all_min_no:
             for batch_logits in logits:
                 output_labels.append(np.argmax(batch_logits, 1))
+                return output_labels
                 output_labels_probs.append(np.amax(batch_logits, 1))
         else:
             for i in xrange(np.shape(logits)[0]):

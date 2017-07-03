@@ -69,8 +69,8 @@ class SequenceRNNModel(object):
                  num_heads=1, debug=True):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
-        n_classes = decoder_n_steps - 1
-        self.n_classes, self.decoder_symbols_size = n_classes, n_classes * 2 + 1
+        n_classes = (decoder_n_steps - 1)/2
+        self.n_classes, self.decoder_symbols_size = n_classes, n_classes + 1
         self.batch_size = batch_size
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
         self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_n_hidden
@@ -99,8 +99,8 @@ class SequenceRNNModel(object):
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
         self.targets = [self.decoder_inputs[i+1] for i in xrange(self.decoder_n_steps)]
         decoder_cell = self.single_cell(self.decoder_n_hidden)
-        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_n_steps])
-        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_n_steps])
+        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_symbols_size])
+        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_symbols_size])
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
@@ -117,7 +117,7 @@ class SequenceRNNModel(object):
             self.attention_states = tf.concat(top_states, 1)
         if self.debug:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_seq2seq(self.encoder_inputs,
-                    self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_n_steps+1, self.decoder_n_steps, self.decoder_embedding_size,
+                    self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_n_steps+1, self.decoder_symbols_size, self.decoder_embedding_size,
                                                                 output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         elif not self.use_embedding and not self.use_attention:
             self.outputs, self.decoder_hidden_state = self.noembedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state, decoder_cell)

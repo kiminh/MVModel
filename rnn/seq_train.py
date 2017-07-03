@@ -46,7 +46,7 @@ def main(unused_argv):
 
 def train():
     data = fake_data.read_data()
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, 2*FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
                                      batch_size=FLAGS.batch_size,
@@ -91,7 +91,7 @@ def train():
 
 def test():
     data = fake_data.read_data()
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, 2*FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
@@ -111,8 +111,12 @@ def test():
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
 
-        test_size = 10
-        test_encoder_inputs, test_decoder_inputs = data.train.next_batch(test_size, shuffle=False)
+        test_size = data.test.size()
+        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(test_size, shuffle=False)
+        test_encoder_inputs[0] = np.ones(test_encoder_inputs.shape[1])
+        test_encoder_inputs[1] = np.ones(test_encoder_inputs.shape[1])
+        test_encoder_inputs[1] = test_encoder_inputs[1] + 3
+        print("inputs:", test_encoder_inputs.tolist())
         target_labels = get_target_labels(test_decoder_inputs)
         # test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))

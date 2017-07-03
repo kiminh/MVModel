@@ -72,7 +72,7 @@ def read_data(num=7, test_num=10):
     data_size = len(lan1)
 
     def lan1_lan2(lan1):
-        return [data_utils.GO_ID] + [lan_map[l-1][1] for l in lan1]
+        return [data_utils.GO_ID] + [lan_map[l-1][1] for l in lan1] + [lan_map[l-1][1] for l in lan1]
     train_lan1, test_lan1 = lan1[:data_size-test_num], lan1[-test_num:]
     train_lan2, test_lan2 = [lan1_lan2(l_train) for l_train in train_lan1], [lan1_lan2(l_test) for l_test in test_lan1]
 

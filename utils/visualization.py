@@ -112,7 +112,7 @@ def show_attention(attn_file, model_index=0):
     print(model_attn)
     fig, ax = plt.subplots()
     fig.suptitle("%s-%d"%(attn_file[attn_file.rfind('/')+1:], model_index))
-    cax = ax.imshow(model_attn, cmap="gray", interpolation="nearest")
+    cax = ax.imshow(model_attn, cmap="gray", interpolation="nearest", vmin=0, vmax=1)
     cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
     cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
 
@@ -144,5 +144,5 @@ if __name__ == '__main__':
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
-    show_attention('../ignore/data/attention_weights_1view.npy', model_index=715)
+    show_attention('../ignore/data/attention_weights_sigmoidA.npy', model_index=715)
     plt.show()

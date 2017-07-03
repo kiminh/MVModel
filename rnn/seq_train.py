@@ -4,14 +4,13 @@ import numpy as np
 from seq_rnn_model import SequenceRNNModel
 import data_utils
 import model_data
-import fake_data
 import csv
 # data path parameter
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
-tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/seq2seq/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/seq2seq/seq_mvmodel.ckpt-30', 'trained mvmodel path')
+tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
+tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
@@ -20,9 +19,9 @@ tf.flags.DEFINE_boolean("use_attention", True, "whether use attention")
 
 tf.flags.DEFINE_integer("training_epoches", 200, "total train epoches")
 tf.flags.DEFINE_integer("save_epoches", 10, "epoches can save")
-tf.flags.DEFINE_integer("n_views", 7, "number of views for each model")
+tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
 tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
-tf.flags.DEFINE_integer("n_classes", 7, "total number of classes to be classified")
+tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
 tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
@@ -45,8 +44,8 @@ def main(unused_argv):
         test()
 
 def train():
-    data = fake_data.read_data()
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, 2*FLAGS.n_classes+1, FLAGS.n_hidden,
+    data =  model_data.read_data(FLAGS.data_path)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
                                      batch_size=FLAGS.batch_size,
@@ -67,7 +66,7 @@ def train():
             while batch * FLAGS.batch_size <= data.train.size():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(FLAGS.batch_size)
                 # target_labels = get_target_labels(batch_decoder_inputs)
-                # batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
+                batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=FLAGS.batch_size)
                 _, loss, _, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
                 # predict_labels = seq_rnn_model.predict(outputs)
@@ -90,8 +89,8 @@ def train():
             epoch += 1
 
 def test():
-    data = fake_data.read_data()
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, 2*FLAGS.n_classes+1, FLAGS.n_hidden,
+    data = model_data.read_data(FLAGS.data_path)
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
@@ -110,19 +109,13 @@ def test():
         # return
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-
-        test_size = data.test.size()
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(test_size, shuffle=False)
-        test_encoder_inputs[0] = np.ones(test_encoder_inputs.shape[1])
-        test_encoder_inputs[1] = np.ones(test_encoder_inputs.shape[1])
-        test_encoder_inputs[1] = test_encoder_inputs[1] + 3
-        print("inputs:", test_encoder_inputs.tolist())
+        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
-        # test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
+        test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
-                                                                                                batch_size=test_size)
+                                                                                                batch_size=data.test.size())
         # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
                                                                                                 # train_decoder_inputs,
                                                                                                 # batch_size=data.train.size())
@@ -134,9 +127,7 @@ def test():
         attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
         attns_weights = np.transpose(attns_weights, (1, 0, 2))
         np.save("attention_weights", attns_weights)
-        print("targets:", target_labels)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
-        print("predict_labels:", predict_labels)
         acc = accuracy(predict_labels, target_labels)
 
         with open(FLAGS.test_acc_file, 'a') as f:
@@ -146,7 +137,13 @@ def test():
 
 
 def get_target_labels(seq_labels):
-    return np.copy(seq_labels).tolist()
+    target_labels = []
+    for i in xrange(np.shape(seq_labels)[0]): #loop batch_size
+        for j in xrange(np.shape(seq_labels)[1]): #loop label
+            if seq_labels[i][j] % 2 == 1:
+                target_labels.append((seq_labels[i][j]+1)/2)
+                break
+    return target_labels
 
 def accuracy(predict, target):
     return np.mean(np.equal(predict, target))

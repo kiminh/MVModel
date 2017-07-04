@@ -66,13 +66,15 @@ class SequenceRNNModel(object):
                  decoder_symbols_size, decoder_n_steps, decoder_n_hidden, batch_size=32,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True,
                  use_lstm=False, use_embedding=True, use_attention=True,
-                 num_heads=1):
+                 num_heads=1, init_embedding=None):
         self.encoder_symbols_size, self.encoder_n_steps, self.encoder_n_hidden = encoder_symbols_size, encoder_n_steps, encoder_n_hidden
         self.decoder_symbols_size, self.decoder_n_steps, self.decoder_n_hidden = decoder_symbols_size, decoder_n_steps, decoder_n_hidden
         self.n_classes = decoder_n_steps - 1
         self.batch_size = batch_size
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
         self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_n_hidden
+        self.init_embedding = init_embedding
+        self.encoder_embedding_size = init_embedding.shape[1] if init_embedding else encoder_n_hidden
         if is_training:
             self.feed_previous = False
         else:
@@ -105,6 +107,7 @@ class SequenceRNNModel(object):
             self.encoder_inputs,
             self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_symbols_size,
             self.decoder_symbols_size, self.decoder_embedding_size,
+            input_init_embedding=self.init_embedding,
             output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
 
 
@@ -308,7 +311,9 @@ class SequenceRNNModel(object):
                                          cell,
                                          num_encoder_symbols,
                                          num_decoder_symbols,
-                                         embedding_size,
+                                         encoder_embedding_size,
+                                         decoder_embedding_size,
+                                         input_init_embedding=None,
                                          num_heads=1,
                                          output_projection=None,
                                          feed_previous=False,
@@ -363,7 +368,8 @@ class SequenceRNNModel(object):
             encoder_cell = rnn.core_rnn_cell.EmbeddingWrapper(
                 encoder_cell,
                 embedding_classes=num_encoder_symbols,
-                embedding_size=embedding_size)
+                embedding_size=encoder_embedding_size,
+                initializer=tf.constant_initializer(input_init_embedding) if input_init_embedding else None)
             encoder_outputs, encoder_state = rnn.static_rnn(
                 encoder_cell, encoder_inputs, dtype=dtype)
 
@@ -386,7 +392,7 @@ class SequenceRNNModel(object):
                     attention_states,
                     cell,
                     num_decoder_symbols,
-                    embedding_size,
+                    decoder_embedding_size,
                     num_heads=num_heads,
                     output_size=output_size,
                     output_projection=output_projection,

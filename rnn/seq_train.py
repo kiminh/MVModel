@@ -52,6 +52,7 @@ def train():
                                      batch_size=FLAGS.batch_size,
                                      is_training=True,
                                      use_lstm=FLAGS.use_lstm,
+                                     init_embedding=model_data.cluster_embedding(FLAGS.data_path),
                                      use_attention=FLAGS.use_attention,
                                      use_embedding=FLAGS.use_embedding,
                                      num_heads=FLAGS.num_heads)

@@ -14,6 +14,7 @@ tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving 
 #tf.flags.DEFINE_string('test_feature_file', 'test-wxy.npy', 'file path saving model features for testing')
 tf.flags.DEFINE_string("test_feature_file", "test_label_3.npy", "test vgg-sigmoid feature")
 tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
+tf.flags.DEFINE_string("cluster_feature_file", 'cluster_center_mat_3.npy', 'file path saving cluster features')
 
 FLAGS = tf.flags.FLAGS
 
@@ -123,6 +124,10 @@ def read_data(data_dir, n_views=12):
 
     print("read data finished")
     return base.Datasets(train=train_dataset, test=test_dataset, validation=None)
+
+def cluster_embedding(data_dir):
+    return np.load(os.path.join(data_dir, FLAGS.cluster_feature_file))
+
 
 def multiview(fcs, n_views=12):
     fcs2 = np.zeros(shape=[fcs.shape[0], n_views, fcs.shape[2]])

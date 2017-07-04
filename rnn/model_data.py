@@ -8,7 +8,7 @@ from tensorflow.contrib.learn.python.learn.datasets import base
 tf.flags.DEFINE_string('data_dir', '/home1/shangmingyang/data/3dmodel', 'dir path saving model features file and labels file for training and testing')
 #tf.flags.DEFINE_string('train_feature_file', 'train_12p_vgg19_epo29_tanh7_feature.npy', 'file path saving model features for training')
 #tf.flags.DEFINE_string('train_feature_file', 'train-wxy.npy', 'file path saving model features for training')
-tf.flags.DEFINE_string("train_feature_file", "train_label3.npy", "vgg-sigmoid feature")
+tf.flags.DEFINE_string("train_feature_file", "train_label_3.npy", "vgg-sigmoid feature")
 tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving model labels for training')
 #tf.flags.DEFINE_string('test_feature_file', 'test_12p_vgg19_epo29_tanh7_feature.npy', 'file path saving model features for testing')
 #tf.flags.DEFINE_string('test_feature_file', 'test-wxy.npy', 'file path saving model features for testing')
@@ -103,14 +103,10 @@ class DataSet(object):
 def read_data(data_dir, n_views=12):
     print("read data from %s" %data_dir)
     train_fcs = np.load(os.path.join(data_dir, FLAGS.train_feature_file))
-    train_fcs = multiview(train_fcs, n_views)
-    #train_fcs = maxpooling(train_fcs)
     train_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
     train_labels = onehot(train_labels)
 
     test_fcs = np.load(os.path.join(data_dir, FLAGS.test_feature_file))
-    test_fcs = multiview(test_fcs, n_views)
-    #test_fcs = maxpooling(test_fcs)
     test_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.test_label_file))
     test_labels = onehot(test_labels)
 

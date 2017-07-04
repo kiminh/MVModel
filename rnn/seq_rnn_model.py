@@ -63,7 +63,7 @@ def linear(args, output_size, bias, bias_start=0.0):
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_symbols_size, encoder_n_steps, encoder_n_hidden,
-                 decoder_symbols_size, decoder_n_steps, decoder_n_hidden, batch_size=10,
+                 decoder_symbols_size, decoder_n_steps, decoder_n_hidden, batch_size=32,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True,
                  use_lstm=False, use_embedding=True, use_attention=True,
                  num_heads=1):
@@ -416,7 +416,8 @@ class SequenceRNNModel(object):
         :return: Gridient, loss, logits,
         """
         input_feed = {}
-        input_feed[self.encoder_inputs.name] = encoder_inputs
+        for i in xrange(self.encoder_n_steps):
+            input_feed[self.encoder_inputs[i].name] = encoder_inputs[i]
         for i in xrange(self.decoder_n_steps):
             input_feed[self.decoder_inputs[i].name] = decoder_inputs[i]
             input_feed[self.target_weights[i].name] = target_weights[i]
@@ -428,7 +429,6 @@ class SequenceRNNModel(object):
         if not forward_only:
             output_ops = [self.optimizer, self.cost]
         else:
-            #output_ops = [self.logits, self.encoder_hidden_state]
             output_ops = self.logits
         outputs = session.run(output_ops, input_feed)
         if not forward_only:
@@ -437,15 +437,16 @@ class SequenceRNNModel(object):
             attns_weights = session.run(self.attns_weights, input_feed)
             return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
 
-    def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
+    def get_batch(self, batch_inputs, batch_labels, batch_size=10):
         """
         format batch to fit input placeholder
         :param batch_encoder_inputs:
         :param batch_labels:
         :return:
         """
-        self.batch_size = batch_size
-        batch_decoder_inputs, batch_target_weights = [], []
+        batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = [], [], []
+        for j in xrange(np.shape(batch_inputs)[1]):
+            batch_encoder_inputs.append(np.array([batch_inputs[i][j] for i in xrange(self.batch_size)]))
         for j in xrange(np.shape(batch_labels)[1]):
             batch_decoder_inputs.append(np.array([batch_labels[i][j] for i in xrange(self.batch_size)]))
             ones_weights = np.ones(self.batch_size)

@@ -6,7 +6,7 @@ import data_utils
 import model_data
 import csv
 # data path parameter
-tf.flags.DEFINE_string('data_path', '/home1/shangmingyang/data/3dmodel', 'file dir for saving features and labels')
+tf.flags.DEFINE_string('data_path', '/home1/shangmingyang/data/3dmodel/seq_data', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
@@ -97,7 +97,6 @@ def test():
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
         test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
-        test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
@@ -135,6 +134,10 @@ def accuracy(predict, target):
     return np.mean(np.equal(predict, target))
 
 def get_modelpath():
+    if FLAGS.train:
+        return FLAGS.save_seq_embeddingmvmodel_path
+    else:
+        return FLAGS.seq_embeddingmvmodel_path
     if FLAGS.use_embedding and FLAGS.train:
         return FLAGS.save_seq_embeddingmvmodel_path
     elif FLAGS.use_embedding and not FLAGS.train:

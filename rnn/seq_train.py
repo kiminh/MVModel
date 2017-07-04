@@ -98,6 +98,7 @@ def test():
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
         test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
+        print("targets:", target_labels)
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
@@ -114,6 +115,7 @@ def test():
         attns_weights = np.transpose(attns_weights, (1, 0, 2))
         np.save("attention_weights", attns_weights)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
+        print("predict:", predict_labels)
         acc = accuracy(predict_labels, target_labels)
 
         with open(FLAGS.test_acc_file, 'a') as f:

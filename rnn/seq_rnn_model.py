@@ -74,7 +74,7 @@ class SequenceRNNModel(object):
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
         self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_n_hidden
         self.init_embedding = init_embedding
-        self.encoder_embedding_size = init_embedding.shape[1] if init_embedding else encoder_n_hidden
+        self.encoder_embedding_size = 4096 #init_embedding.shape[1] if init_embedding is not None else encoder_n_hidden
         if is_training:
             self.feed_previous = False
         else:
@@ -106,7 +106,7 @@ class SequenceRNNModel(object):
         self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_seq2seq(
             self.encoder_inputs,
             self.decoder_inputs[:self.decoder_n_steps], decoder_cell, self.encoder_symbols_size,
-            self.decoder_symbols_size, self.decoder_embedding_size,
+            self.decoder_symbols_size, self.encoder_embedding_size, self.decoder_embedding_size,
             input_init_embedding=self.init_embedding,
             output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
 
@@ -369,7 +369,7 @@ class SequenceRNNModel(object):
                 encoder_cell,
                 embedding_classes=num_encoder_symbols,
                 embedding_size=encoder_embedding_size,
-                initializer=tf.constant_initializer(input_init_embedding) if input_init_embedding else None)
+                initializer=tf.constant_initializer(input_init_embedding) if input_init_embedding is not None else None)
             encoder_outputs, encoder_state = rnn.static_rnn(
                 encoder_cell, encoder_inputs, dtype=dtype)
 

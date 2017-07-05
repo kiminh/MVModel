@@ -21,6 +21,7 @@ tf.flags.DEFINE_integer("training_epoches", 200, "total train epoches")
 tf.flags.DEFINE_integer("save_epoches", 10, "epoches can save")
 tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
 tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
+tf.flags.DEFINE_integer("decoder_embedding_size", 256, "decoder embedding size")
 tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
@@ -45,7 +46,7 @@ def main(unused_argv):
 
 def train():
     data =  model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
                                      batch_size=FLAGS.batch_size,

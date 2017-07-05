@@ -62,17 +62,17 @@ def linear(args, output_size, bias, bias_start=0.0):
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
-                 decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=32,
+                 decoder_embedding_size, decoder_n_steps, decoder_n_hidden, batch_size,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True,
                  use_lstm=True, use_embedding=True, use_attention=True,
                  num_heads=1, init_decoder_embedding=None):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
-        self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
+        self.decoder_n_steps, self.decoder_n_hidden = decoder_n_steps, decoder_n_hidden
         n_classes = decoder_n_steps - 1
         self.n_classes, self.decoder_symbols_size = n_classes, n_classes * 2 + 1
         self.batch_size = batch_size
         self.learning_rate, self.keep_prob, self.is_training = learning_rate, keep_prob if is_training else 1.0, is_training
-        self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_n_hidden
+        self.use_lstm, self.decoder_embedding_size = use_lstm, decoder_embedding_size
         if is_training:
             self.feed_previous = False
         else:

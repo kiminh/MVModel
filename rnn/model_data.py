@@ -15,7 +15,7 @@ tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving 
 tf.flags.DEFINE_string("test_feature_file", "test_12p_vgg19_epo49_do05_sigmoid7_feature.npy", "test vgg-sigmoid feature")
 tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
 
-tf.flags.DEFINE_string("class_yes_feature_file", 'cluster_center_mat_40.npy', "file path for saving class yes feature")
+tf.flags.DEFINE_string("class_yes_feature_file", '/home1/shangmingyang/data/3dmodel/seq_data/cluster_center_mat_40.npy', "file path for saving class yes feature")
 
 
 FLAGS = tf.flags.FLAGS
@@ -102,35 +102,38 @@ class DataSet(object):
         return np.array([self.label2sequence(label_onehot) for label_onehot in labels_onehot])
 
 
-def read_data(data_dir, n_views=12,rotate_num=12):
+def read_data(data_dir, n_views=12, roll_number=12):
     print("read data from %s" %data_dir)
     train_fcs = np.load(os.path.join(data_dir, FLAGS.train_feature_file))
     train_fcs = multiview(train_fcs, n_views)
-    train_fcs = np.copy(train_fcs, rotate_num)
-    for num in xrange(rotate_num):
-        np.roll(train_fcs, num, axis=0)
-
     #train_fcs = maxpooling(train_fcs)
     train_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
     train_labels = onehot(train_labels)
-    train_labels = np.repeat(train_labels, rotate_num, axis=0)
+    train_fcs, train_labels = roll_enrich(train_fcs, train_labels, roll_number)
+    print train_fcs.shape, train_labels.shape
+
 
     test_fcs = np.load(os.path.join(data_dir, FLAGS.test_feature_file))
     test_fcs = multiview(test_fcs, n_views)
     #test_fcs = maxpooling(test_fcs)
     test_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.test_label_file))
     test_labels = onehot(test_labels)
+    test_fcs, test_labels = roll_enrich(test_fcs, test_labels, roll_number)
+
+    print test_fcs.shape, test_labels.shape
 
     train_dataset = DataSet(None, train_fcs, train_labels)
-
-    #train_and_test_fcs = np.concatenate((train_fcs, test_fcs))
-    #train_and_test_labels = np.concatenate((train_labels, test_labels))
-    #train_dataset = DataSet(None, train_and_test_fcs, train_and_test_labels)
 
     test_dataset = DataSet(None, test_fcs, test_labels)
 
     print("read data finished")
     return base.Datasets(train=train_dataset, test=test_dataset, validation=None)
+
+def roll_enrich(fcs, labels, roll_number):
+    new_fcs = np.concatenate([np.roll(fcs, i, axis=1)  for i in xrange(roll_number)])
+    new_labels = np.concatenate([np.copy(labels) for _ in xrange(roll_number)])
+    return new_fcs, new_labels
+
 
 def multiview(fcs, n_views=12):
     fcs2 = np.zeros(shape=[fcs.shape[0], n_views, fcs.shape[2]])

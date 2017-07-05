@@ -102,13 +102,18 @@ class DataSet(object):
         return np.array([self.label2sequence(label_onehot) for label_onehot in labels_onehot])
 
 
-def read_data(data_dir, n_views=12):
+def read_data(data_dir, n_views=12,rotate_num=12):
     print("read data from %s" %data_dir)
     train_fcs = np.load(os.path.join(data_dir, FLAGS.train_feature_file))
     train_fcs = multiview(train_fcs, n_views)
+    train_fcs = np.copy(train_fcs, rotate_num)
+    for num in xrange(rotate_num):
+        np.roll(train_fcs, num, axis=0)
+
     #train_fcs = maxpooling(train_fcs)
     train_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
     train_labels = onehot(train_labels)
+    train_labels = np.repeat(train_labels, rotate_num, axis=0)
 
     test_fcs = np.load(os.path.join(data_dir, FLAGS.test_feature_file))
     test_fcs = multiview(test_fcs, n_views)

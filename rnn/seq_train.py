@@ -31,7 +31,7 @@ tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read fro
 
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')
-tf.flags.DEFINE_integer("batch_size", 10, "training batch size")
+tf.flags.DEFINE_integer("batch_size", 32, "training batch size")
 tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate")
 tf.flags.DEFINE_integer("n_max_keep_model", 20, "max number to save model")
 
@@ -53,7 +53,8 @@ def train():
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
                                      use_embedding=FLAGS.use_embedding,
-                                     num_heads=FLAGS.num_heads)
+                                     num_heads=FLAGS.num_heads,
+                                     init_decoder_embedding=model_data.read_data(FLAGS.data_path))
     with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)

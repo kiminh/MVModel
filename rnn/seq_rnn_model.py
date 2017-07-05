@@ -62,10 +62,10 @@ def linear(args, output_size, bias, bias_start=0.0):
 
 class SequenceRNNModel(object):
     def __init__(self, encoder_n_input, encoder_n_steps, encoder_n_hidden,
-                 decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=10,
+                 decoder_n_input, decoder_n_steps, decoder_n_hidden, batch_size=32,
                  learning_rate = 0.00001, keep_prob=1.0, is_training=True,
                  use_lstm=True, use_embedding=True, use_attention=True,
-                 num_heads=1):
+                 num_heads=1, init_decoder_embedding=None):
         self.encoder_n_input, self.encoder_n_steps, self.encoder_n_hidden = encoder_n_input, encoder_n_steps, encoder_n_hidden
         self.decoder_n_input, self.decoder_n_steps, self.decoder_n_hidden = decoder_n_input, decoder_n_steps, decoder_n_hidden
         n_classes = decoder_n_steps - 1
@@ -80,6 +80,7 @@ class SequenceRNNModel(object):
         self.is_training, self.use_embedding, self.use_attention = is_training, use_embedding, use_attention
         if self.use_attention:
             self.num_heads = num_heads
+        self.init_decoder_embedding = init_decoder_embedding
 
     def single_cell(self, hidden_size):
         if self.use_lstm:
@@ -123,7 +124,7 @@ class SequenceRNNModel(object):
         else:
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_decoder(self.decoder_inputs[:self.decoder_n_steps],
                 self.encoder_hidden_state, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
-                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous, num_heads=self.num_heads)
+                output_projection=self.decoder_output_projection, feed_previous=self.feed_previous, num_heads=self.num_heads, init_embedding=self.init_decoder_embedding)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
@@ -167,7 +168,7 @@ class SequenceRNNModel(object):
                                 output_size=None,
                                 output_projection=None,
                                 feed_previous=False,
-                                update_embedding_for_previous=True,
+                                init_embedding=None,
                                 dtype=None,
                                 scope=None,
                                 initial_state_attention=False):
@@ -180,8 +181,8 @@ class SequenceRNNModel(object):
         with tf.variable_scope(
                         scope or "embedding_attention_decoder", dtype=dtype) as scope:
 
-            embedding = tf.get_variable("embedding",
-                                                    [num_symbols, embedding_size])
+            embedding = tf.get_variable("embedding", [num_symbols, embedding_size],
+                                        initializer=tf.constant_initializer(init_embedding) if init_embedding is not None else None)
             loop_function = self._extract_argmax(
                 embedding, output_projection) if feed_previous else None
             emb_inp = [

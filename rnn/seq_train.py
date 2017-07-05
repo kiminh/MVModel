@@ -10,7 +10,7 @@ tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 
 tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-100', 'trained mvmodel path')
+tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-70', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
@@ -92,7 +92,7 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path)
-    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, 1, FLAGS.n_classes+1, FLAGS.n_hidden,
+    seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,

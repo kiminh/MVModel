@@ -15,7 +15,7 @@ tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving 
 tf.flags.DEFINE_string("test_feature_file", "test_12p_vgg19_epo49_do05_sigmoid7_feature.npy", "test vgg-sigmoid feature")
 tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
 
-tf.flags.DEFINE_string("class_yes_feature_file", 'cluster_center_mat_40.npy', "file path for saving class yes feature")
+tf.flags.DEFINE_string("class_yes_feature_file", '/home1/shangmingyang/data/3dmodel/seq_data/cluster_center_mat_40.npy', "file path for saving class yes feature")
 
 
 FLAGS = tf.flags.FLAGS
@@ -106,14 +106,9 @@ def read_data(data_dir, n_views=12,rotate_num=12):
     print("read data from %s" %data_dir)
     train_fcs = np.load(os.path.join(data_dir, FLAGS.train_feature_file))
     train_fcs = multiview(train_fcs, n_views)
-    train_fcs = np.copy(train_fcs, rotate_num)
-    for num in xrange(rotate_num):
-        np.roll(train_fcs, num, axis=0)
-
     #train_fcs = maxpooling(train_fcs)
     train_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
     train_labels = onehot(train_labels)
-    train_labels = np.repeat(train_labels, rotate_num, axis=0)
 
     test_fcs = np.load(os.path.join(data_dir, FLAGS.test_feature_file))
     test_fcs = multiview(test_fcs, n_views)

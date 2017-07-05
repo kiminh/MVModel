@@ -119,7 +119,6 @@ def read_data(data_dir, n_views=12, roll_number=12):
     test_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.test_label_file))
     test_labels = onehot(test_labels)
     test_fcs, test_labels = roll_enrich(test_fcs, test_labels, roll_number)
-
     print test_fcs.shape, test_labels.shape
 
     train_dataset = DataSet(None, train_fcs, train_labels)

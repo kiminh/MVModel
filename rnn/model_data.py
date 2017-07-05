@@ -204,7 +204,7 @@ def get_target_labels(seq_labels):
     return target_labels
 
 def read_class_yes_embedding(data_dir):
-    yes_embedding = np.load(os.path.join(data_dir, FLAGS.class_yes_feature_file))
+    yes_embedding = np.load(FLAGS.class_yes_feature_file)
     class_embedding = np.zeros([81, yes_embedding.shape[1]]) # TODO 81=2*classes+1
     class_embedding[1::2] = yes_embedding
     return class_embedding

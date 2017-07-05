@@ -56,7 +56,10 @@ def train():
                                      use_embedding=FLAGS.use_embedding,
                                      num_heads=FLAGS.num_heads,
                                      init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
-    with tf.Session() as sess:
+    config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
@@ -99,7 +102,10 @@ def test():
                                      use_attention=FLAGS.use_attention,
                                      use_embedding=FLAGS.use_embedding,
                                      num_heads=FLAGS.num_heads)
-    with tf.Session() as sess:
+    config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
         saver.restore(sess, get_modelpath())

@@ -15,6 +15,9 @@ tf.flags.DEFINE_string('train_label_file', 'train_label.npy', 'file path saving 
 tf.flags.DEFINE_string("test_feature_file", "test_12p_vgg19_epo49_do05_sigmoid7_feature.npy", "test vgg-sigmoid feature")
 tf.flags.DEFINE_string('test_label_file', 'test_label.npy', 'file path saving model labels for testing')
 
+tf.flags.DEFINE_string("class_yes_feature_file", 'cluster_center_mat_40.npy', "file path for saving class yes feature")
+
+
 FLAGS = tf.flags.FLAGS
 
 class DataSet(object):
@@ -194,6 +197,13 @@ def get_target_labels(seq_labels):
                 target_labels.append((seq_labels[i][j]+1)/2)
                 break
     return target_labels
+
+def read_class_yes_embedding(data_dir):
+    yes_embedding = np.load(os.path.join(data_dir, FLAGS.class_yes_feature_file))
+    class_embedding = np.zeros([81, yes_embedding.shape[1]]) # TODO 81=2*classes+1
+    class_embedding[1::2] = yes_embedding
+    return class_embedding
+
 
 if __name__ == '__main__':
     run_readdata_demo(FLAGS.data_dir)

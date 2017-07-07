@@ -32,8 +32,8 @@ tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read fro
 
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')
-tf.flags.DEFINE_integer("batch_size", 32, "training batch size")
-tf.flags.DEFINE_float("learning_rate", 0.001, "learning rate")
+tf.flags.DEFINE_integer("batch_size", 64, "training batch size")
+tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate")
 tf.flags.DEFINE_integer("n_max_keep_model", 20, "max number to save model")
 
 FLAGS = tf.flags.FLAGS
@@ -132,10 +132,11 @@ def test():
         # return
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.num_examples, shuffle=False)
-        target_labels = get_target_labels(test_decoder_inputs)
+        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.num_examples)
+        #target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         test_decoder_inputs = batch_label2sequence(test_decoder_inputs)
+        target_labels = get_target_labels(test_decoder_inputs)
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,

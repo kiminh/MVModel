@@ -144,5 +144,5 @@ if __name__ == '__main__':
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
-    show_attention('../ignore/data/attention_weights_sigmoidA.npy', model_index=715)
+    show_attention('../ignore/data/attention_weights_richdata.npy', model_index=567)
     plt.show()

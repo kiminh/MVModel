@@ -415,4 +415,56 @@ class SequenceRNNModel(object):
         return predict_labels
 
 
+def attention(attention_states, queries, num_heads=1):
+    """Put attention masks on hidden using hidden_features and query."""
+    """
+    @:param attention_states: states to be attentioned, shape=[batch_size, attn_len, attn_size]
+    @:param queries: current feature to calculate the attention, shape=[batch_size, attn_size, feature_len]
+    @:param num_heads: Number of attention heads that read from attention_states.
+    @:return A tuple of the form (ds, att_weights), where:
+        output: list of weights feature, [[shape=[batch_size, feature_len], ...]]
+        att_weights: list of attention weights, [[shape=[batch_size, attn_len]]
+    """
+    batch_size, attn_len, attn_size = tf.get_shape(attention_states)[0].value, tf.shape(attention_states)[1].value, tf.shape(attention_states)[2].value
+    hidden = tf.reshape(attention_states, [-1, attn_len, 1, attn_size])
+    attention_vec_size = attn_size
+    hidden_features, v = [], []
+
+    for a in xrange(num_heads):
+        k = tf.get_variable("AttnW_%d" % a, [1, 1, attn_size, attention_vec_size])
+        hidden_features.append(tf.nn.conv2d(hidden, k, [1, 1, 1, 1], "SAME"))
+        v.append(tf.get_variable("AttnV_%d" % a, [attention_vec_size]))
+
+    def sub_attention(query):
+        ds = []  # Results of attention reads will be stored here.
+        att_weights = [] # attention weights given specific query
+        if nest.is_sequence(query):  # If the query is a tuple, flatten it.
+            query_list = nest.flatten(query)
+            for q in query_list:  # Check that ndims == 2 if specified.
+                ndims = q.get_shape().ndims
+                if ndims:
+                    assert ndims == 2
+            query = tf.concat(query_list, 1)
+        for a in xrange(num_heads):
+            with tf.variable_scope("Attention_%d" % a):
+                y = linear(query, attention_vec_size, True)
+                y = tf.reshape(y, [-1, 1, 1, attention_vec_size])
+                # Attention mask is a softmax of v^T * tanh(...).
+                s = tf.reduce_sum(v[a] * tf.tanh(hidden_features[a] + y), [2, 3])
+                a = tf.nn.softmax(s)
+                att_weights.append(a)
+                # Now calculate the attention-weighted vector d.
+                d = tf.reduce_sum(tf.reshape(a, [-1, attn_len, 1, 1]) * hidden, [1, 2])
+                ds.append(tf.reshape(d, [-1, attn_size]))
+        return ds, att_weights
+
+    query_list = tf.unstack(queries, axis=0)
+    outputs, attn_weights = [], []
+    for query in query_list:
+        output, att = sub_attention(query)
+        outputs.append(output)
+        attn_weights.append(att)
+    return outputs, attn_weights
+
+
 

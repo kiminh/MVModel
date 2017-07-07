@@ -9,23 +9,23 @@ import csv
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
-tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
-tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-70', 'trained mvmodel path')
+tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/mnist/seq_mvmodel.ckpt", "file path to save model")
+tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/mnist/seq_mvmodel.ckpt-70', 'trained mvmodel path')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
 tf.flags.DEFINE_boolean("use_embedding", True, "whether use embedding")
 tf.flags.DEFINE_boolean("use_attention", True, "whether use attention")
 
-tf.flags.DEFINE_integer("training_epoches", 200, "total train epoches")
-tf.flags.DEFINE_integer("save_epoches", 10, "epoches can save")
-tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
-tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
-tf.flags.DEFINE_integer("decoder_embedding_size", 256, "decoder embedding size")
-tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
+tf.flags.DEFINE_integer("training_epoches", 20, "total train epoches")
+tf.flags.DEFINE_integer("save_epoches", 1, "epoches can save")
+tf.flags.DEFINE_integer("n_views", 28, "number of views for each model")
+tf.flags.DEFINE_integer("n_input_fc", 28, "size of input feature")
+tf.flags.DEFINE_integer("decoder_embedding_size", 128, "decoder embedding size")
+tf.flags.DEFINE_integer("n_classes", 10, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
-tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
+tf.flags.DEFINE_boolean("use_lstm", False, "use lstm or gru cell")
 
 # attention parameter
 tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read from attention_states")
@@ -33,7 +33,7 @@ tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read fro
 # training parameter
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 tf.flags.DEFINE_integer("batch_size", 32, "training batch size")
-tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate")
+tf.flags.DEFINE_float("learning_rate", 0.001, "learning rate")
 tf.flags.DEFINE_integer("n_max_keep_model", 20, "max number to save model")
 
 FLAGS = tf.flags.FLAGS
@@ -82,7 +82,7 @@ def train():
         epoch = 1
         while epoch <= FLAGS.training_epoches:
             batch = 1
-            while batch * FLAGS.batch_size <= data.train.size():
+            while batch * FLAGS.batch_size <= data.train.num_examples:
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(FLAGS.batch_size)
                 # target_labels = get_target_labels(batch_decoder_inputs)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
@@ -132,7 +132,7 @@ def test():
         # return
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.num_examples, shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         test_decoder_inputs = batch_label2sequence(test_decoder_inputs)

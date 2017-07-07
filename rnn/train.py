@@ -3,7 +3,7 @@ import numpy as np
 
 from seq_rnn_model import SequenceRNNModel
 import data_utils
-import model_data
+from tensorflow.examples.tutorials.mnist import input_data
 import csv
 # data path parameter
 tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
@@ -44,8 +44,23 @@ def main(unused_argv):
     else:
         test()
 
+def label2sequence(label_onehot):
+    label = np.argmax(label_onehot) + 1
+    sequence = [data_utils.GO_ID]
+    for i in xrange(1, np.shape(label_onehot)[0]+1):
+        if label != i:
+            sequence.append(2*i)
+        else:
+            sequence.append(2*i-1)
+    return np.array(sequence)
+
+def batch_label2sequence(labels_onehot):
+    return np.array([label2sequence(label_onehot) for label_onehot in labels_onehot])
+
+mnist_data = input_data.read_data_sets("/home1/shangmingyang/data/MNIST_data", one_hot=True)
+
 def train():
-    data =  model_data.read_data(FLAGS.data_path)
+    data = mnist_data
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
@@ -54,8 +69,7 @@ def train():
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
                                      use_embedding=FLAGS.use_embedding,
-                                     num_heads=FLAGS.num_heads,
-                                     init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
+                                     num_heads=FLAGS.num_heads)
     config = tf.ConfigProto()
     # config.gpu_options.allow_growth = True
     config.gpu_options.per_process_gpu_memory_fraction = 0.5
@@ -72,6 +86,7 @@ def train():
                 batch_encoder_inputs, batch_decoder_inputs = data.train.next_batch(FLAGS.batch_size)
                 # target_labels = get_target_labels(batch_decoder_inputs)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
+                batch_decoder_inputs = batch_label2sequence(batch_decoder_inputs)
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=FLAGS.batch_size)
                 _, loss, _, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
                 # predict_labels = seq_rnn_model.predict(outputs)
@@ -94,9 +109,9 @@ def train():
             epoch += 1
 
 def test():
-    data = model_data.read_data(FLAGS.data_path)
+    data = mnist_data
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
-                                     batch_size=data.test.size(),
+                                     batch_size=data.test.num_examples,
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
@@ -120,10 +135,11 @@ def test():
         test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
+        test_decoder_inputs = batch_label2sequence(test_decoder_inputs)
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
-                                                                                                batch_size=data.test.size())
+                                                                                                batch_size=data.test.num_examples)
         # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
                                                                                                 # train_decoder_inputs,
                                                                                                 # batch_size=data.train.size())

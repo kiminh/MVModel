@@ -97,7 +97,7 @@ class SequenceRNNModel(object):
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
         self.targets = [self.decoder_inputs[i+1] for i in xrange(self.decoder_n_steps)]
         decoder_cell = self.single_cell(self.decoder_n_hidden)
-        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden])
+        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, 1])
         decoder_proj_b = tf.get_variable("proj_b", ())
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
@@ -124,14 +124,14 @@ class SequenceRNNModel(object):
                 self.encoder_hidden_state, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
                 output_projection=self.decoder_output_projection, feed_previous=self.feed_previous, num_heads=self.num_heads, init_embedding=self.init_decoder_embedding)
         # do wx+b for output, to generate decoder_symbols_size length
-        for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
+        for i in xrange(self.decoder_n_steps): #ignore last output, we only care 40 classes
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
         if self.feed_previous:
             # do softmax
             self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
             if self.attns_weights is not None:
                 self.attns_weights = self.attns_weights[:-1]
-
+        self.logits_sigmoid = tf.sigmoid(self.outputs[0])
         # cost function
         if self.is_training:
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights, softmax_loss_function=self.self_sigmoid_loss_function)
@@ -177,7 +177,7 @@ class SequenceRNNModel(object):
             output_size = cell.output_size
         if output_projection is not None:
             proj_biases = tf.convert_to_tensor(output_projection[1], dtype=dtype)
-            proj_biases.get_shape().assert_is_compatible_with([num_symbols])
+            #proj_biases.get_shape().assert_is_compatible_with([num_symbols])
 
         with tf.variable_scope(
                         scope or "embedding_attention_decoder", dtype=dtype) as scope:
@@ -343,7 +343,8 @@ class SequenceRNNModel(object):
     def self_sigmoid_loss_function(self, targets, logits):
         # transfer sequence coding(1-80) to probability(0 or 1)
         targets_sigmoid = tf.cast(targets % 2, tf.float32)
-        return tf.reduce_sum((logits-targets_sigmoid) ** 2)
+        logits_sigmoid = tf.sigmoid(tf.reshape(logits, [-1]))
+        return (logits_sigmoid-targets_sigmoid) ** 2
 
 
     def self_sequence_loss_by_example(self, logits, targets, weights, average,
@@ -405,13 +406,13 @@ class SequenceRNNModel(object):
         input_feed[last_target] = np.zeros([self.batch_size], dtype=np.int32)
         self.input_feed = input_feed
         if not forward_only:
-            output_ops = [self.optimizer, self.cost]
+            output_ops = [self.optimizer, self.cost, self.logits_sigmoid]
         else:
             #output_ops = [self.logits, self.encoder_hidden_state]
             output_ops = self.logits
         outputs = session.run(output_ops, input_feed)
         if not forward_only:
-            return outputs[0], outputs[1], None, None #Gradient, loss, no outputs, no encoder_hidden
+            return outputs[0], outputs[1], outputs[2], None #Gradient, loss, no outputs, no encoder_hidden
         else:
             attns_weights = session.run(self.attns_weights, input_feed)
             return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden

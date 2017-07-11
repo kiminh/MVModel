@@ -73,9 +73,10 @@ def train():
                 # target_labels = get_target_labels(batch_decoder_inputs)
                 batch_encoder_inputs = batch_encoder_inputs.reshape((FLAGS.batch_size, FLAGS.n_views, FLAGS.n_input_fc))
                 batch_encoder_inputs, batch_decoder_inputs, batch_target_weights = seq_rnn_model.get_batch(batch_encoder_inputs, batch_decoder_inputs, batch_size=FLAGS.batch_size)
-                _, loss, _, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
+                _, loss, targets_sigmoid, _ = seq_rnn_model.step(sess, batch_encoder_inputs, batch_decoder_inputs, batch_target_weights,forward_only=False)
                 # predict_labels = seq_rnn_model.predict(outputs)
                 # acc = accuracy(predict_labels, target_labels)
+                #print("targets sigmoid:", targets_sigmoid)
                 print("epoch %d batch %d: loss=%f" %(epoch, batch, loss))
                 batch += 1
             # if epoch % display_epoch == 0:

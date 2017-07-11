@@ -137,6 +137,7 @@ def test():
         attns_weights = np.transpose(attns_weights, (1, 0, 2))
         np.save("attention_weights", attns_weights)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
+        print("predict_labels:", predict_labels)
         acc = accuracy(predict_labels, target_labels)
 
         with open(FLAGS.test_acc_file, 'a') as f:

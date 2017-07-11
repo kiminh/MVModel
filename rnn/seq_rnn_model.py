@@ -142,11 +142,12 @@ class SequenceRNNModel(object):
     def _extract_argmax(self, embedding, output_projection=None):
         def loop_function(prev, i):
             if output_projection is not None:
-                prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
+                prev = tf.matmul(prev, output_projection[0]) + output_projection[1]
+                #prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
                 prev = tf.reshape(prev, [-1])
+            prev = tf.sigmoid(prev)
             prev = tf.cast((1-prev) * 2, tf.int32) # YES:0 or NO:1
-            # prev_symbol = tf.argmax(prev, 1)
-            prev_symbol = prev + 1 + 2 * i
+            prev_symbol = (prev - 1 + 2 * i)
             emb_prev = tf.nn.embedding_lookup(embedding, prev_symbol)
             return emb_prev
         return loop_function
@@ -444,12 +445,15 @@ class SequenceRNNModel(object):
         output_labels_probs = np.array([np.reshape(logit, [-1]) for logit in logits]) #[output, batch_size]
         predict_labels = []
         output_labels_probs = np.transpose(output_labels_probs, (1, 0)) # [batch_size, output]
+        np.save('probs', output_labels_probs)
+        return np.argmax(output_labels_probs, axis=1)+1
+
         for i in xrange(output_labels_probs.shape[0]):
             max_yes_index, max_yes_prob, min_no_index, min_no_prob = -1, 0.0, -1, 1.0
             for j in xrange(output_labels_probs.shape[1]):
                 if output_labels_probs[i][j] > max_yes_prob:
                     max_yes_index, max_yes_prob = j, output_labels_probs[i][j]
-                elif output_labels_probs[i][j] < min_no_prob:
+                if output_labels_probs[i][j] < min_no_prob:
                     min_no_index, min_no_prob = j, output_labels_probs[i][j]
             if max_yes_prob > 0.5:
                 predict_labels.append(max_yes_index+1)

@@ -128,7 +128,8 @@ class SequenceRNNModel(object):
             self.outputs[i] = tf.matmul(self.outputs[i], self.decoder_output_projection[0]) + self.decoder_output_projection[1]
         if self.feed_previous:
             # do softmax
-            self.logits = tf.nn.softmax(self.outputs[:-1], dim=-1, name="output_softmax")
+            # self.logits = tf.nn.sigmoid(self.outputs[:-1])
+            self.logits = [tf.sigmoid(output) for output in self.outputs[:-1]]
             if self.attns_weights is not None:
                 self.attns_weights = self.attns_weights[:-1]
         self.logits_sigmoid = tf.sigmoid(self.outputs[0])
@@ -142,6 +143,7 @@ class SequenceRNNModel(object):
         def loop_function(prev, i):
             if output_projection is not None:
                 prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
+                prev = tf.reshape(prev, [-1])
             prev = tf.cast((1-prev) * 2, tf.int32) # YES:0 or NO:1
             # prev_symbol = tf.argmax(prev, 1)
             prev_symbol = prev + 1 + 2 * i
@@ -439,34 +441,52 @@ class SequenceRNNModel(object):
         :param logits: logits of each step,shape=[classes, batch_size, 2* classes+1]
         :return: label,shape=[batch_size]
         """
-        output_labels, output_labels_probs = [], []
-        if not all_min_no:
-            for batch_logits in logits:
-                output_labels.append(np.argmax(batch_logits, 1))
-                output_labels_probs.append(np.amax(batch_logits, 1))
-        else:
-            for i in xrange(np.shape(logits)[0]):
-                batch_logits = logits[i]
-                batch_size = np.shape(batch_logits)[0]
-                output_labels.append(np.array([(i+1)*2]*batch_size))
-                output_labels_probs.append(batch_logits[np.arange(batch_size),(i+1)*2])
-
+        output_labels_probs = np.array([np.reshape(logit, [-1]) for logit in logits]) #[output, batch_size]
         predict_labels = []
-        for j in xrange(np.shape(logits)[1]):
+        output_labels_probs = np.transpose(output_labels_probs, (1, 0)) # [batch_size, output]
+        for i in xrange(output_labels_probs.shape[0]):
             max_yes_index, max_yes_prob, min_no_index, min_no_prob = -1, 0.0, -1, 1.0
-            for i in xrange(len(output_labels)):
-                if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
-                    max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
-                if output_labels[i][j] > 0 and output_labels[i][j] % 2 == 0 and output_labels_probs[i][j] < min_no_prob:
-                    min_no_index, min_no_prob = output_labels[i][j], output_labels_probs[i][j]
-            if all_min_no: # get class by min probability meaning not this class
-                predict_labels.append(min_no_index/2)
-            elif max_yes_index == -1 and min_no: # extract index with min probablity meaning no
-                predict_labels.append(min_no_index/2)
+            for j in xrange(output_labels_probs.shape[1]):
+                if output_labels_probs[i][j] > max_yes_prob:
+                    max_yes_index, max_yes_prob = j, output_labels_probs[i][j]
+                elif output_labels_probs[i][j] < min_no_prob:
+                    min_no_index, min_no_prob = j, output_labels_probs[i][j]
+            if max_yes_prob > 0.5:
+                predict_labels.append(max_yes_index+1)
             else:
-                predict_labels.append((max_yes_index+1)/2) #convert index to label
-        predict_labels = np.array(predict_labels)
-        return predict_labels
+                predict_labels.append(min_no_index+1)
+        return np.array(predict_labels)
+
+
+        # if not all_min_no:
+        #     for i, batch_logits in enumerate(logits):
+        #         output_labels.append()
+        #     for batch_logits in logits:
+        #         output_labels.append(np.argmax(batch_logits, 1))
+        #         output_labels_probs.append(np.amax(batch_logits, 1))
+        # else:
+        #     for i in xrange(np.shape(logits)[0]):
+        #         batch_logits = logits[i]
+        #         batch_size = np.shape(batch_logits)[0]
+        #         output_labels.append(np.array([(i+1)*2]*batch_size))
+        #         output_labels_probs.append(batch_logits[np.arange(batch_size),(i+1)*2])
+        #
+        # predict_labels = []
+        # for j in xrange(np.shape(logits)[1]):
+        #     max_yes_index, max_yes_prob, min_no_index, min_no_prob = -1, 0.0, -1, 1.0
+        #     for i in xrange(len(output_labels)):
+        #         if output_labels[i][j] % 2 == 1 and output_labels_probs[i][j] > max_yes_prob:
+        #             max_yes_index, max_yes_prob = output_labels[i][j], output_labels_probs[i][j]
+        #         if output_labels[i][j] > 0 and output_labels[i][j] % 2 == 0 and output_labels_probs[i][j] < min_no_prob:
+        #             min_no_index, min_no_prob = output_labels[i][j], output_labels_probs[i][j]
+        #     if all_min_no: # get class by min probability meaning not this class
+        #         predict_labels.append(min_no_index/2)
+        #     elif max_yes_index == -1 and min_no: # extract index with min probablity meaning no
+        #         predict_labels.append(min_no_index/2)
+        #     else:
+        #         predict_labels.append((max_yes_index+1)/2) #convert index to label
+        # predict_labels = np.array(predict_labels)
+        # return predict_labels
 
 
 def attention(attention_states, queries, num_heads=1):

@@ -38,3 +38,24 @@ hidden=256, use decoder embedding, enrich data, gru, 0.0001, 32
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding_dataroll-160,0.88375000000000004
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding_dataroll-170,0.88875000000000004
 /home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding_dataroll-180,0.88875000000000004
+hidden=128, use decoder embedding, no enrich data, gru, 0.0001, 32, full-data
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-5,0.92382495948136145
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-10,0.92301458670988656
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-15,0.9209886547811994
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-20,0.9205834683954619
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-25,0.92463533225283634
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-30,0.92301458670988656
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-35,0.92260940032414906
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-40,0.92463533225283634
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-45,0.91693679092382496
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-50,0.92382495948136145
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-55,0.91815235008103724
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-60,0.91734197730956235
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-65,0.92463533225283634
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-70,0.92260940032414906
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-75,0.91572123176661269
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-80,0.92301458670988656
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-85,0.9205834683954619
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-90,0.92260940032414906
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-95,0.92341977309562395
+/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-100,0.92585089141004862

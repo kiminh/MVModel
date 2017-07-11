@@ -6,7 +6,7 @@ import data_utils
 import model_data
 import csv
 # data path parameter
-tf.flags.DEFINE_string('data_path', '/home3/lhl/tensorflow-vgg-master/feature', 'file dir for saving features and labels')
+tf.flags.DEFINE_string('data_path', '', 'file dir for saving features and labels')
 tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
@@ -17,15 +17,15 @@ tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 tf.flags.DEFINE_boolean("use_embedding", True, "whether use embedding")
 tf.flags.DEFINE_boolean("use_attention", True, "whether use attention")
 
-tf.flags.DEFINE_integer("training_epoches", 200, "total train epoches")
-tf.flags.DEFINE_integer("save_epoches", 10, "epoches can save")
+tf.flags.DEFINE_integer("training_epoches", 100, "total train epoches")
+tf.flags.DEFINE_integer("save_epoches", 5, "epoches can save")
 tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
 tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
 tf.flags.DEFINE_integer("decoder_embedding_size", 256, "decoder embedding size")
 tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
-tf.flags.DEFINE_boolean("use_lstm", True, "use lstm or gru cell")
+tf.flags.DEFINE_boolean("use_lstm", False, "use lstm or gru cell")
 
 # attention parameter
 tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read from attention_states")

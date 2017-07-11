@@ -9,4 +9,4 @@ with open(checkpoint_file) as f:
 print data
 
 for model_path in data:
-    os.system('python train.py --train=False --seq_embeddingmvmodel_path=%s --test_acc_file=%s --n_hidden=%d --decoder_embedding_size=%d --enrich_data=%si --use_lstm=False' %(model_path, 'embedding.csv', 128, 4096, "False"))
+    os.system('python train.py --train=False --seq_embeddingmvmodel_path=%s --test_acc_file=%s --n_hidden=%d --decoder_embedding_size=%d --enrich_data=%si --use_lstm=False' %(model_path, 'embedding.csv', 256, 4096, "False"))

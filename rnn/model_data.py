@@ -106,7 +106,7 @@ class DataSet(object):
         return np.array([self.label2sequence(label_onehot) for label_onehot in labels_onehot])
 
 
-def read_data(data_dir, n_views=12, roll_number=12, read_train=True, read_test=False):
+def read_data(data_dir, n_views=12, roll_number=12, read_train=True, read_test=True):
     print("read data from %s" %data_dir)
     train_dataset, test_dataset = None, None
     if read_train:

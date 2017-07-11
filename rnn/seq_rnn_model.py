@@ -137,11 +137,14 @@ class SequenceRNNModel(object):
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights, softmax_loss_function=self.self_sigmoid_loss_function)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
             # self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
+
     def _extract_argmax(self, embedding, output_projection=None):
-        def loop_function(prev, _):
+        def loop_function(prev, i):
             if output_projection is not None:
                 prev = tf.nn.xw_plus_b(prev, output_projection[0], output_projection[1])
-            prev_symbol = tf.argmax(prev, 1)
+            prev = tf.cast((1-prev) * 2, tf.int32) # YES:0 or NO:1
+            # prev_symbol = tf.argmax(prev, 1)
+            prev_symbol = prev + 1 + 2 * i
             emb_prev = tf.nn.embedding_lookup(embedding, prev_symbol)
             return emb_prev
         return loop_function
@@ -339,7 +342,7 @@ class SequenceRNNModel(object):
 
     def self_sigmoid_loss_function(self, targets, logits):
         # transfer sequence coding(1-80) to probability(0 or 1)
-        targets_sigmoid = targets % 2
+        targets_sigmoid = tf.cast(targets % 2, tf.float32)
         return tf.reduce_sum((logits-targets_sigmoid) ** 2)
 
 
@@ -367,8 +370,6 @@ class SequenceRNNModel(object):
                 total_size += 1e-12  # Just to avoid division by 0 for all-0 weights.
                 log_perps /= total_size
         return log_perps
-
-
 
 
     def encoder_RNN(self, encoder_inputs):

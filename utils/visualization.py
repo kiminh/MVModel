@@ -144,5 +144,5 @@ if __name__ == '__main__':
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
-    show_attention('../ignore/data/attn_mnist.npy', model_index=0)
+    show_attention('../ignore/data/attn_mnist.npy', model_index=17) #6
     plt.show()

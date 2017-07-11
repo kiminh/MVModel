@@ -97,8 +97,8 @@ class SequenceRNNModel(object):
         self.target_weights = [tf.placeholder(tf.float32, shape=[None], name="weight{0}".format(i)) for i in xrange(self.decoder_n_steps)]
         self.targets = [self.decoder_inputs[i+1] for i in xrange(self.decoder_n_steps)]
         decoder_cell = self.single_cell(self.decoder_n_hidden)
-        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden, self.decoder_symbols_size])
-        decoder_proj_b = tf.get_variable("proj_b", [self.decoder_symbols_size])
+        decoder_proj_w = tf.get_variable("proj_w", [self.decoder_n_hidden])
+        decoder_proj_b = tf.get_variable("proj_b", ())
         self.decoder_output_projection = (decoder_proj_w, decoder_proj_b)
         if self.decoder_output_projection is None:
             decoder_cell = rnn.core_rnn_cell.OutputProjectionWrapper(decoder_cell, self.decoder_symbols_size)
@@ -134,7 +134,7 @@ class SequenceRNNModel(object):
 
         # cost function
         if self.is_training:
-            self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
+            self.cost = sequence_loss(self.outputs, self.targets, self.target_weights, softmax_loss_function=self.self_sigmoid_loss_function)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
             # self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
     def _extract_argmax(self, embedding, output_projection=None):
@@ -317,6 +317,58 @@ class SequenceRNNModel(object):
                 attns_weights.append(attns_weight)
 
         return outputs, state, attns_weights
+
+    def self_sequence_loss(self, logits, targets, weights,
+                           average_across_timesteps=True,
+                           average_across_batch=True,
+                           softmax_loss_function=None,
+                           name=None):
+        with tf.variable_scope(name, "sequence_loss", logits + targets + weights):
+            cost = tf.reduce_sum(
+                self.self_sequence_loss_by_example(
+                    logits,
+                    targets,
+                    weights,
+                    average_across_timesteps=average_across_timesteps,
+                    softmax_loss_function=softmax_loss_function))
+            if average_across_batch:
+                batch_size = tf.shape(targets[0])[0]
+                return cost / tf.cast(batch_size, cost.dtype)
+            else:
+                return cost
+
+    def self_sigmoid_loss_function(self, targets, logits):
+        # transfer sequence coding(1-80) to probability(0 or 1)
+        targets_sigmoid = targets % 2
+        return tf.reduce_sum((logits-targets_sigmoid) ** 2)
+
+
+    def self_sequence_loss_by_example(self, logits, targets, weights, average,
+                                      average_across_timesteps=True,
+                                      softmax_loss_function=None,
+                                      name=None):
+        with tf.variable_scope(name, "sequence_loss_by_example",
+                            logits + targets + weights):
+            log_perp_list = []
+            for logit, target, weight in zip(logits, targets, weights):
+                if softmax_loss_function is None:
+                    # TODO(irving,ebrevdo): This reshape is needed because
+                    # sequence_loss_by_example is called with scalars sometimes, which
+                    # violates our general scalar strictness policy.
+                    target = tf.reshape(target, [-1])
+                    crossent = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                        labels=target, logits=logit)
+                else:
+                    crossent = softmax_loss_function(target, logit)
+                log_perp_list.append(crossent * weight)
+            log_perps = tf.add_n(log_perp_list)
+            if average_across_timesteps:
+                total_size = tf.add_n(weights)
+                total_size += 1e-12  # Just to avoid division by 0 for all-0 weights.
+                log_perps /= total_size
+        return log_perps
+
+
 
 
     def encoder_RNN(self, encoder_inputs):

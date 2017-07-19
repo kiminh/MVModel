@@ -54,8 +54,8 @@ def train():
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
                                      use_embedding=FLAGS.use_embedding,
-                                     num_heads=FLAGS.num_heads,
-                                     init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
+                                     num_heads=FLAGS.num_heads)
+                                     #init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
     config = tf.ConfigProto()
     # config.gpu_options.allow_growth = True
     config.gpu_options.per_process_gpu_memory_fraction = 0.5

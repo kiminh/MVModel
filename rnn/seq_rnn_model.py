@@ -360,9 +360,8 @@ class SequenceRNNModel(object):
         if not forward_only:
             return outputs[0], outputs[1], None, None #Gradient, loss, no outputs, no encoder_hidden
         else:
-            #attns_weights = session.run(self.attns_weights, input_feed)
-            encoder_hidden = session.run(self.encoder_hidden_state)
-            return None, None, outputs, encoder_hidden #No gradient, no loss, outputs logits, encoder_hidden
+            attns_weights = session.run(self.attns_weights, input_feed)
+            return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
 
     def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
         """

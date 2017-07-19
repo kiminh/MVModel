@@ -130,11 +130,9 @@ def test():
         # _, _, outputs_train, hidden_train = seq_rnn_model.step(sess, train_encoder_inputs, train_decoder_inputs, train_target_weights,
         #                                     forward_only=True)
         #np.save("hidden_feature_train_embedding", hidden_train)
-        _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
+        _, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
                                           forward_only=True)  # don't do optimize
-        attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
-        attns_weights = np.transpose(attns_weights, (1, 0, 2))
-        np.save("attention_weights", attns_weights)
+        np.save("test_hidden", hidden)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
 

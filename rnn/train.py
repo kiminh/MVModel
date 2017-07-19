@@ -96,7 +96,7 @@ def train():
 def test():
     data = model_data.read_data(FLAGS.data_path)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
-                                     batch_size=data.test.size(),
+                                     batch_size=data.train.size(),
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
@@ -117,13 +117,13 @@ def test():
         # return
 
         # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+        test_encoder_inputs, test_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
-                                                                                                batch_size=data.test.size())
+                                                                                                batch_size=data.train.size())
         # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
                                                                                                 # train_decoder_inputs,
                                                                                                 # batch_size=data.train.size())
@@ -132,7 +132,7 @@ def test():
         #np.save("hidden_feature_train_embedding", hidden_train)
         _, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
                                           forward_only=True)  # don't do optimize
-        np.save("test_hidden", hidden)
+        np.save("train_hidden", hidden)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
 

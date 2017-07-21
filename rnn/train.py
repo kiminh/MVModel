@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import os
 
 from seq_rnn_model import SequenceRNNModel
 import data_utils
@@ -22,7 +23,7 @@ tf.flags.DEFINE_integer("save_epoches", 5, "epoches can save")
 tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
 tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
 tf.flags.DEFINE_integer("decoder_embedding_size", 256, "decoder embedding size")
-tf.flags.DEFINE_integer("n_classes", 40, "total number of classes to be classified")
+tf.flags.DEFINE_integer("n_classes", 10, "total number of classes to be classified")
 tf.flags.DEFINE_integer("n_hidden", 128, "hidden of rnn cell")
 tf.flags.DEFINE_float("keep_prob", 1.0, "kepp prob of rnn cell")
 tf.flags.DEFINE_boolean("use_lstm", False, "use lstm or gru cell")
@@ -57,9 +58,11 @@ def train():
                                      num_heads=FLAGS.num_heads)
                                      #init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
     config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.5
-    with tf.Session() as sess:
+    config.gpu_options.allow_growth = True
+    #config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    if not os.path.exists(get_modelpath()):
+        os.makedirs(get_modelpath())
+    with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
@@ -134,7 +137,6 @@ def test():
                                           forward_only=True)  # don't do optimize
         attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
         attns_weights = np.transpose(attns_weights, (1, 0, 2))
-        np.save("attention_weights", attns_weights)
         predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
         acc = accuracy(predict_labels, target_labels)
 

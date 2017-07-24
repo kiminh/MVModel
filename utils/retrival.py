@@ -51,6 +51,9 @@ def retrival_metrics_test2train(sims_file, test_labels_file, train_labels_file):
     print mAP_input
     print("mAP:%f" %mean_average_precision(mAP_input.tolist()))
 
+def PR_test2test(sims_file, labels_file):
+    pass
+
 if __name__ == '__main__':
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_train_euclidean')
     generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_train_euclidean')

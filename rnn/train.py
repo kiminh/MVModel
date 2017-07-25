@@ -12,6 +12,7 @@ tf.flags.DEFINE_string("save_seq_basicmvmodel_path", "/home1/shangmingyang/data/
 tf.flags.DEFINE_string('seq_basicmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/basic/seq_mvmodel.ckpt-100', 'trained mvmodel path')
 tf.flags.DEFINE_string("save_seq_embeddingmvmodel_path", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt", "file path to save model")
 tf.flags.DEFINE_string('seq_embeddingmvmodel_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/seq_mvmodel.ckpt-70', 'trained mvmodel path')
+tf.flags.DEFINE_string('checkpoint_path', '/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/embedding/checkpoint', 'trained model checkpoint')
 tf.flags.DEFINE_string('test_acc_file', 'seq_acc.csv', 'test acc file')
 
 # model parameter
@@ -111,39 +112,29 @@ def test():
     with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
-        saver.restore(sess, get_modelpath())
 
-        # proj_w_var = [v for v in tf.trainable_variables() if 'proj_w' in v.name][0]
-        # proj_w_value = sess.run(proj_w_var)
-        # print("shape:", proj_w_value.shape)
-        # np.save("proj_w", proj_w_value)
-        # return
+        with open(FLAGS.checkpoint_path) as f:
+            models = f.readlines()[1:]
+            models = [line.split(":")[1] for line in models]
+            models = [line[2:-2] for line in models]
 
-        # train_encoder_inputs, train_decoder_inputs = data.train.next_batch(data.train.size(), shuffle=False)
         test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
-        #train_encoder_inputs = train_encoder_inputs.reshape((-1, n_steps, n_input))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
                                                                                                 batch_size=data.test.size())
-        # train_encoder_inputs, train_decoder_inputs, train_target_weights = seq_rnn_model.get_batch(train_encoder_inputs,
-                                                                                                # train_decoder_inputs,
-                                                                                                # batch_size=data.train.size())
-        # _, _, outputs_train, hidden_train = seq_rnn_model.step(sess, train_encoder_inputs, train_decoder_inputs, train_target_weights,
-        #                                     forward_only=True)
-        #np.save("hidden_feature_train_embedding", hidden_train)
-        _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights,
-                                          forward_only=True)  # don't do optimize
-        attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
-        attns_weights = np.transpose(attns_weights, (1, 0, 2))
-        predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
-        acc = accuracy(predict_labels, target_labels)
+        for model_path in models:
+            saver.restore(sess, model_path)
 
-        with open(FLAGS.test_acc_file, 'a') as f:
-            w = csv.writer(f)
-            w.writerow([get_modelpath(), acc])
-        print("model:%s, acc=%f" % (get_modelpath(), acc))
+            _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
+            predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
+            acc = accuracy(predict_labels, target_labels)
+
+            with open(FLAGS.test_acc_file, 'a') as f:
+                w = csv.writer(f)
+                w.writerow([model_path, acc])
+            print("model:%s, acc=%f" % (model_path, acc))
 
 
 def get_target_labels(seq_labels):

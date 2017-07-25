@@ -140,11 +140,11 @@ def roll_enrich(fcs, labels, roll_number):
 
 
 def multiview(fcs, n_views=12):
-    fcs2 = np.zeros(shape=[fcs.shape[0], 3, fcs.shape[2]])
+    fcs2 = np.zeros(shape=[fcs.shape[0], n_views, fcs.shape[2]])
     for i in xrange(len(fcs)):
         #firstfc = np.reshape(fcs[i][0], [1, fcs.shape[2]])
         #fcs2[i] = np.repeat(firstfc, n_views, axis=0)
-        fcs2[i] = fcs[i][:9:4]
+        fcs2[i] = fcs[i][:n_views]
         # TODO debug for views connection on attention
         # if n_views == 12:
         #     perm = np.arange(12)

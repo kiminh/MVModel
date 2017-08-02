@@ -20,7 +20,7 @@ tf.flags.DEFINE_boolean("use_embedding", True, "whether use embedding")
 tf.flags.DEFINE_boolean("use_attention", True, "whether use attention")
 
 tf.flags.DEFINE_integer("training_epoches", 100, "total train epoches")
-tf.flags.DEFINE_integer("save_epoches", 5, "epoches can save")
+tf.flags.DEFINE_integer("save_epoches", 1, "epoches can save")
 tf.flags.DEFINE_integer("n_views", 12, "number of views for each model")
 tf.flags.DEFINE_integer("n_input_fc", 4096, "size of input feature")
 tf.flags.DEFINE_integer("decoder_embedding_size", 256, "decoder embedding size")
@@ -36,7 +36,7 @@ tf.flags.DEFINE_integer("num_heads", 1, "Number of attention heads that read fro
 tf.flags.DEFINE_boolean('train', True, 'train mode')
 tf.flags.DEFINE_integer("batch_size", 32, "training batch size")
 tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate")
-tf.flags.DEFINE_integer("n_max_keep_model", 20, "max number to save model")
+tf.flags.DEFINE_integer("n_max_keep_model", 100, "max number to save model")
 
 FLAGS = tf.flags.FLAGS
 

@@ -107,6 +107,7 @@ class SequenceRNNModel(object):
             for i in xrange(self.decoder_symbols_size):
                 constant_embedding[i] = np.array([i], dtype=np.float32)
             self.fake_embedding =tf.constant(constant_embedding)
+        self.attns_weights = None
         if self.use_attention:
             # attention
             top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]

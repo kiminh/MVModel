@@ -124,6 +124,7 @@ def test():
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
                                                                                                 batch_size=data.test.size())
+        models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/modelnet10_128_256_0.0002_0.9471/seq_mvmodel.ckpt-10"]
         for model_path in models:
             saver.restore(sess, model_path)
 
@@ -146,8 +147,17 @@ def get_target_labels(seq_labels):
                 break
     return target_labels
 
-def accuracy(predict, target):
-    return np.mean(np.equal(predict, target))
+def accuracy(predict, target, mode="average_class"):
+    predict, target = np.array(predict), np.array(target)
+    if mode == "average_instance":
+        return np.mean(np.equal(predict, target))
+    elif mode == "average_class":
+        target_classes = np.unique(target)
+        acc_classes = []
+        for class_id in target_classes:
+            predict_at_class = predict[np.argwhere(target == class_id).reshape([-1])]
+            acc_classes.append(np.mean(np.equal(predict_at_class, class_id)))
+        return np.mean(np.array(acc_classes))
 
 def get_modelpath():
     if FLAGS.use_embedding and FLAGS.train:

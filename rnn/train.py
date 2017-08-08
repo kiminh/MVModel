@@ -132,11 +132,11 @@ def test():
             _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
             predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
             acc = accuracy(predict_labels, target_labels)
-
+            acc.insert(0, model_path)
             with open(FLAGS.test_acc_file, 'a') as f:
                 w = csv.writer(f)
-                w.writerow([model_path, acc])
-            print("model:%s, acc=%f" % (model_path, acc))
+                w.writerow(acc)
+            print("model:%s, acc_instance=%f, acc_class=%f" % (model_path, acc[1], acc[2]))
 
 
 def get_target_labels(seq_labels):
@@ -158,7 +158,7 @@ def accuracy(predict, target, mode="average_class"):
         for class_id in target_classes:
             predict_at_class = predict[np.argwhere(target == class_id).reshape([-1])]
             acc_classes.append(np.mean(np.equal(predict_at_class, class_id)))
-        return np.mean(np.array(acc_classes))
+        return  [np.mean(np.equal(predict, target)), np.mean(np.array(acc_classes))]
 
 def get_modelpath():
     if FLAGS.use_embedding and FLAGS.train:

@@ -6,16 +6,10 @@ import data_utils
 from tensorflow.contrib.learn.python.learn.datasets import base
 
 tf.flags.DEFINE_string('data_dir', '/home1/shangmingyang/data/3dmodel', 'dir path saving model features file and labels file for training and testing')
-#tf.flags.DEFINE_string('train_feature_file', 'train_12p_vgg19_epo29_tanh7_feature.npy', 'file path saving model features for training')
-#tf.flags.DEFINE_string('train_feature_file', 'train-wxy.npy', 'file path saving model features for training')
-tf.flags.DEFINE_string("train_feature_file", "/home3/lhl/tensorflow-vgg-master-total/feature/train_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "vgg-sigmoid feature")
-#tf.flags.DEFINE_string("train_feature_file", "/home1/shangmingyang/data/3dmodel/train_12p_vgg19_epo10_do05_sigmoid7_feature_total_rec.npy", "vgg-sigmoid feature")
-tf.flags.DEFINE_string('train_label_file', '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', 'file path saving model labels for training')
-#tf.flags.DEFINE_string('train_label_file', '/home1/shangmingyang/data/3dmodel/train_label_rec.npy', 'file path saving model labels for training')
-#tf.flags.DEFINE_string('test_feature_file', 'test_12p_vgg19_epo29_tanh7_feature.npy', 'file path saving model features for testing')
-#tf.flags.DEFINE_string('test_feature_file', 'test-wxy.npy', 'file path saving model features for testing')
-tf.flags.DEFINE_string("test_feature_file", "/home3/lhl/tensorflow-vgg-master-total/feature/test_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "test vgg-sigmoid feature")
-tf.flags.DEFINE_string('test_label_file', '/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy', 'file path saving model labels for testing')
+tf.flags.DEFINE_string("train_feature_file", "/home3/lhl/tensorflow-vgg-master-total/feature/train_12p_vgg19_epo10_do05_sigmoid7_feature_total.npy", "vgg-sigmoid feature")
+tf.flags.DEFINE_string('train_label_file', '/home3/lhl/modelnet40_total_v2/train_label.npy', 'file path saving model labels for training')
+tf.flags.DEFINE_string("test_feature_file", "/home3/lhl/tensorflow-vgg-master-total/feature/test_12p_vgg19_epo10_do05_sigmoid7_feature_total.npy", "test vgg-sigmoid feature")
+tf.flags.DEFINE_string('test_label_file', '/home3/lhl/modelnet40_total_v2/test_label.npy', 'file path saving model labels for testing')
 #tf.flags.DEFINE_string('test_label_file', '/home/shangmingyang/projects/MVModel/rnn/modelnet10_label.npy', 'file path saving model labels for testing')
 
 tf.flags.DEFINE_string("class_yes_feature_file", '/home1/shangmingyang/data/3dmodel/seq_data/cluster_center_mat_40.npy', "file path for saving class yes feature")

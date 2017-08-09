@@ -1,9 +1,10 @@
 from scipy.spatial.distance import euclidean, cosine
 from sklearn.metrics import auc
 import numpy as np
+import os
 from rank_metrics import mean_average_precision, average_precision
 
-def retrival_distance(test_feature_file, train_feature_file, savepath='test_train'):
+def generate_retrival_distance(test_feature_file, train_feature_file, savepath='test_train'):
     test_data, train_data = np.load(test_feature_file), np.load(train_feature_file)
     result = [euclidean(test, train) for test in test_data for train in train_data]
     result = np.reshape(np.array(result), [test_data.shape[0], train_data.shape[0]])
@@ -15,7 +16,7 @@ def generate_distance_test2test(test_feature_file, savepath='test_test'):
     result = np.reshape(np.array(result), [test_data.shape[0], test_data.shape[0]])
     np.save(savepath, result)
 
-def retrival_all_distance(test_feature_file, train_feature_file, savepath='all_all'):
+def generate_retrival_all_distance(test_feature_file, train_feature_file, savepath='all_all'):
     test_data, train_data = np.load(test_feature_file), np.load(train_feature_file)
     all_data = np.concatenate((test_data, train_data), axis=0)
     result = [euclidean(test1, test2) for test2 in all_data for test1 in all_data]
@@ -66,8 +67,6 @@ def PR_test2test(sims_file, labels_file):
     Ps, Rs = np.array(Ps), np.array(Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
     area = auc(mean_R, mean_P)
-    np.save("P", mean_P)
-    np.save("R", mean_R)
     return Ps, Rs, area
 
 def PR(y_true, y_pred):
@@ -100,27 +99,48 @@ def PR(y_true, y_pred):
     P, R = [1.0] + P, [0.0] + R
     return P, R
 
-def PR_curve(P, R):
+def PR_curve(P_file, R_file):
+    P, R = np.load(P_file), np.load(R_file)
     import pylab as pl
     pl.plot(R, P)
     pl.show()
 
-def retrival_result(train_feature_file, train_label_file, test_feature_file, test_label_file, save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10"):
+def retrival_results(train_feature_file, train_label_file, test_feature_file, test_label_file, save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10"):
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     generate_distance_test2test(train_feature_file, os.path.join(save_dir, "train2train_euclidean"))
     generate_distance_test2test(test_feature_file, os.path.join(save_dir, "test2test_euclidean"))
-    retrival_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "test2train_euclidean"))
-    retrival_all_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "all2all_euclidean"))
+    generate_retrival_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "test2train_euclidean"))
+    generate_retrival_all_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "all2all_euclidean"))
 
-    generate_labels_all(test_label_file, train_label_file, os.path.join(save_dir, "all_labels")))
+    generate_labels_all(test_label_file, train_label_file, os.path.join(save_dir, "all_labels"))
 
-    mAP_test2test = retrival_metrics_all(test_feature_file, test_label_file)
-    mAP_train2train = retrival_metrics_all(train_feature_file, train_feature_file)
-    mAP_all2all = retrival_metrics_all(os.path.join(save_dir, "all2all_eudlidean.npy"), os.path.join(save_dir, "all_labels.npy"))
-    mAP_test2train = retrival_metrics_test2train(os.path.join())
+    mAP_test2test = retrival_metrics_all(os.path.join(save_dir, "test2test_euclidean.npy"), test_label_file)
+    mAP_train2train = retrival_metrics_all(os.path.join(save_dir, "train2train_euclidean.npy"), train_feature_file)
+    mAP_all2all = retrival_metrics_all(os.path.join(save_dir, "all2all_euclidean.npy"), os.path.join(save_dir, "all_labels.npy"))
+    mAP_test2train = retrival_metrics_test2train(os.path.join(save_dir, "test2train_euclidean.npy"), test_label_file, train_label_file)
+
+    mAPs = [mAP_test2test, mAP_train2train, mAP_all2all, mAP_test2train]
+
+    P_test2test, R_test2test, auc_test2test = PR_test2test(os.path.join(save_dir, "test2test_euclidean.npy"), test_label_file)
+    np.save(os.path.join(save_dir, "P_test2test"), P_test2test)
+    np.save(os.path.join(save_dir, "R_test2test"), R_test2test)
+    aucs = [auc_test2test]
+    try:
+        PR_curve(os.path.join(save_dir, "P_test2test"), os.path.join(save_dir, "R_test2test"))
+    except Exception as e:
+        print e
+    print mAPs, aucs
+    return mAPs, aucs
 
 
 
 if __name__ == '__main__':
+    retrival_results("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy",
+                     "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy"
+                     "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy",
+                     "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
+                     save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean')
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')

@@ -105,6 +105,21 @@ def PR_curve(P, R):
     pl.plot(R, P)
     pl.show()
 
+def retrival_result(train_feature_file, train_label_file, test_feature_file, test_label_file, save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10"):
+    generate_distance_test2test(train_feature_file, os.path.join(save_dir, "train2train_euclidean"))
+    generate_distance_test2test(test_feature_file, os.path.join(save_dir, "test2test_euclidean"))
+    retrival_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "test2train_euclidean"))
+    retrival_all_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "all2all_euclidean"))
+
+    generate_labels_all(test_label_file, train_label_file, os.path.join(save_dir, "all_labels")))
+
+    mAP_test2test = retrival_metrics_all(test_feature_file, test_label_file)
+    mAP_train2train = retrival_metrics_all(train_feature_file, train_feature_file)
+    mAP_all2all = retrival_metrics_all(os.path.join(save_dir, "all2all_eudlidean.npy"), os.path.join(save_dir, "all_labels.npy"))
+    mAP_test2train = retrival_metrics_test2train(os.path.join())
+
+
+
 if __name__ == '__main__':
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean')

@@ -106,12 +106,12 @@ def PR_curve(P, R):
     pl.show()
 
 if __name__ == '__main__':
-    #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_train_euclidean')
-    #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_train_euclidean')
-    #retrival_all_distance('/home/shangmingyang/projects/MVModel/rnn/test_hidden.npy', '/home/shangmingyang/projects/MVModel/rnn/train_hidden.npy', 'all_all_euclidean')
+    #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
+    #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean')
+    #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')
     #generate_labels_all('/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels')
     #retrival_metrics_all('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_all_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels.npy')
     #retrival_metrics_test2train('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_train_euclidean.npy', '/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy')
-    #retrival_metrics_all('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/train_train_euclidean.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy')
-    _,_,area=PR_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_test_euclidean.npy', '/home3/lhl/modelnet40_total_v2/test_label.npy')
-    print area
+    retrival_metrics_all('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean.npy', '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy')
+    #_,_,area=PR_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/test_test_euclidean.npy', '/home3/lhl/modelnet40_total_v2/test_label.npy')
+    #print area

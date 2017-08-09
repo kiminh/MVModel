@@ -137,7 +137,7 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
 
 if __name__ == '__main__':
     retrival_results("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy",
-                     "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy"
+                     "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
                      "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy",
                      "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
                      save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10")

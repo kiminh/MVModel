@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import data_utils
+import random
 
 from tensorflow.contrib.learn.python.learn.datasets import base
 
@@ -147,11 +148,10 @@ def multiview(fcs, n_views=12):
         #fcs2[i] = np.repeat(firstfc, n_views, axis=0)
         fcs2[i] = fcs[i][:n_views]
         # TODO debug for views connection on attention
-        # if n_views == 12:
         #     perm = np.arange(12)
         #     np.random.shuffle(perm)
         #     fcs2[i] = fcs2[i][perm]
-            #fcs2[i] = np.roll(fcs2[i], 2, axis=0)
+        #fcs2[i] = np.roll(fcs2[i], random.randint(0,11), axis=0)
     return fcs2
 
 def maxpooling(fcs):

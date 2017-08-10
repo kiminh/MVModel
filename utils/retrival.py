@@ -67,6 +67,11 @@ def PR_test2test(sims_file, labels_file):
         Rs.append(R)
     Ps, Rs = np.array(Ps), np.array(Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
+    with open('P.txt', 'w') as f:
+        f.write('\n'.join([str(p) for p in mean_P]))
+    with open('R.txt', 'w') as f:
+        f.write("\n".join([str(r) for r in mean_R]))
+
     area = auc(mean_R, mean_P)
     return Ps, Rs, area
 
@@ -102,6 +107,7 @@ def PR(y_true, y_pred):
 
 def PR_curve(P_file, R_file):
     P, R = np.load(P_file), np.load(R_file)
+
     import pylab as pl
     pl.plot(R, P)
     pl.show()
@@ -109,12 +115,12 @@ def PR_curve(P_file, R_file):
 def retrival_results(train_feature_file, train_label_file, test_feature_file, test_label_file, save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10"):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    #generate_distance_test2test(train_feature_file, os.path.join(save_dir, "train2train_euclidean"))
-    #generate_distance_test2test(test_feature_file, os.path.join(save_dir, "test2test_euclidean"))
-    #generate_retrival_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "test2train_euclidean"))
+    generate_distance_test2test(train_feature_file, os.path.join(save_dir, "train2train_euclidean"))
+    generate_distance_test2test(test_feature_file, os.path.join(save_dir, "test2test_euclidean"))
+    generate_retrival_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "test2train_euclidean"))
     generate_retrival_all_distance(test_feature_file, train_feature_file, os.path.join(save_dir, "all2all_euclidean"))
 
-    #generate_labels_all(test_label_file, train_label_file, os.path.join(save_dir, "all_labels"))
+    generate_labels_all(test_label_file, train_label_file, os.path.join(save_dir, "all_labels"))
 
     mAP_test2test = retrival_metrics_all(os.path.join(save_dir, "test2test_euclidean.npy"), test_label_file)
     mAP_train2train = retrival_metrics_all(os.path.join(save_dir, "train2train_euclidean.npy"), train_label_file)
@@ -137,11 +143,12 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
 
 
 if __name__ == '__main__':
-    retrival_results("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy",
-                     "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
-                     "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy",
-                     "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
-                     save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10")
+    retrival_results("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/train_hidden.npy",
+                     "/home3/lhl/modelnet40_total_v2/train_label.npy",
+                     "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test_hidden.npy",
+                     "/home3/lhl/modelnet40_total_v2/test_label.npy",
+                     save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40")
+    #PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean')
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')

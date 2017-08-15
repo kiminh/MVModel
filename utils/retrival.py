@@ -1,6 +1,7 @@
 from scipy.spatial.distance import euclidean, cosine
 from sklearn.metrics import auc
 import numpy as np
+from scipy.interpolate import interp1d
 import os
 from rank_metrics import mean_average_precision, average_precision
 
@@ -40,7 +41,7 @@ def retrival_metrics_all(sims_file, labels_file):
             if labels_row[j] == curr_label:
                 mAP_input[i][j] = 1
     print mAP_input
-    print("mAP:%f" %mean_average_precision(mAP_input.tolist()))
+    return mean_average_precision(mAP_input.tolist())
 
 def retrival_metrics_test2train(sims_file, test_labels_file, train_labels_file):
     sims, labels_test, labels_train = np.load(sims_file), np.load(test_labels_file), np.load(train_labels_file)
@@ -52,7 +53,7 @@ def retrival_metrics_test2train(sims_file, test_labels_file, train_labels_file):
             if labels_row[j] == curr_label:
                 mAP_input[i][j] = 1
     print mAP_input
-    print("mAP:%f" %mean_average_precision(mAP_input.tolist()))
+    return mean_average_precision(mAP_input.tolist())
 
 def PR_test2test(sims_file, labels_file):
     sims, labels = np.load(sims_file), np.load(labels_file)
@@ -62,11 +63,22 @@ def PR_test2test(sims_file, labels_file):
         labels_row = labels[np.argsort(sims_row)]
         y_true = [1 if curr_label==l else 0 for l in labels_row]
         y_pred = [1 for _ in xrange(len(y_true))]
-        P, R = PR(y_true, y_pred)
+        P, R = PR(y_true, y_pred, save=(True if i==20 else False))
+        #if np.mean(P) < 0.95:
+        #    print i
+        if i==20:
+            print y_true
+            print y_pred
+            print P
+            print R
         Ps.append(P)
         Rs.append(R)
     Ps, Rs = np.array(Ps), np.array(Rs)
+    np.save("Ps_modelnet10.npy", Ps)
+    np.save("Rs_modelnet10.npy", Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
+    np.save("mean_P", mean_P)
+    np.save("mean_R", mean_R)
     with open('P.txt', 'w') as f:
         f.write('\n'.join([str(p) for p in mean_P]))
     with open('R.txt', 'w') as f:
@@ -75,7 +87,7 @@ def PR_test2test(sims_file, labels_file):
     area = auc(mean_R, mean_P)
     return Ps, Rs, area
 
-def PR(y_true, y_pred):
+def PR(y_true, y_pred, save=False):
     """
     generate precison and recall array for drawing PR-curve
     y_true: array, value is 0 or 1, 1 means the model has same class with query
@@ -90,20 +102,26 @@ def PR(y_true, y_pred):
         R=[0,1/2,1/2,1/2,1/2]
     """
     P, R = [], []
-    sum_true, TP = 0, 0
+    sum_true, TP = np.count_nonzero(y_true), 0
     TP, FP = 0, 0
     for gd, pred in zip(y_true, y_pred):
         if gd == pred == 1:
             TP += 1
         elif pred == 1 and gd == 0:
             FP += 1
-        if gd == 1:
-            sum_true += 1
         P.append(TP*1.0/(TP+FP))
         R.append(TP)
+        if TP == sum_true:
+            break
     R = [r*1.0/sum_true for r in R]
     P, R = [1.0] + P, [0.0] + R
-    return P, R
+    if save:
+        np.save("P_20", P)
+        np.save("R_20", R)
+    # do linear interpolate
+    f = interp1d(R, P)
+    new_R = np.linspace(0.0, 1.0, 1001, endpoint=True)
+    return f(new_R), new_R
 
 def PR_curve(P_file, R_file):
     P, R = np.load(P_file), np.load(R_file)
@@ -143,11 +161,13 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
 
 
 if __name__ == '__main__':
-    retrival_results("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/train_hidden.npy",
-                     "/home3/lhl/modelnet40_total_v2/train_label.npy",
-                     "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test_hidden.npy",
-                     "/home3/lhl/modelnet40_total_v2/test_label.npy",
-                     save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40")
+    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
+    print auc_test2test
+    #retrival_results("/home3/lhl/shape_seek_interface/train_feature_modelnet10.npy",
+    #                 "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
+    #                 "/home3/lhl/shape_seek_interface/test_feature_modelnet10.npy",
+    #                 "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
+    #                 save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10")
     #PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train2train_euclidean')

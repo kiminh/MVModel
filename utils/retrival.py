@@ -55,7 +55,7 @@ def retrival_metrics_test2train(sims_file, test_labels_file, train_labels_file):
     print mAP_input
     return mean_average_precision(mAP_input.tolist())
 
-def PR_test2test(sims_file, labels_file):
+def PR_test2test(sims_file, labels_file, save_prefix="mean"):
     sims, labels = np.load(sims_file), np.load(labels_file)
     Ps, Rs = [], []
     for i in xrange(sims.shape[0]):
@@ -64,28 +64,44 @@ def PR_test2test(sims_file, labels_file):
         y_true = [1 if curr_label==l else 0 for l in labels_row]
         y_pred = [1 for _ in xrange(len(y_true))]
         P, R = PR(y_true, y_pred, save=(True if i==20 else False))
-        #if np.mean(P) < 0.95:
-        #    print i
-        if i==20:
-            print y_true
-            print y_pred
-            print P
-            print R
         Ps.append(P)
         Rs.append(R)
     Ps, Rs = np.array(Ps), np.array(Rs)
-    np.save("Ps_modelnet10.npy", Ps)
-    np.save("Rs_modelnet10.npy", Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
-    np.save("mean_P", mean_P)
-    np.save("mean_R", mean_R)
-    with open('P.txt', 'w') as f:
+    np.save(save_prefix+"_P", mean_P)
+    np.save(save_prefix+"_R", mean_R)
+    with open(save_prefix+'_P.txt', 'w') as f:
         f.write('\n'.join([str(p) for p in mean_P]))
-    with open('R.txt', 'w') as f:
+    with open(save_prefix+'_R.txt', 'w') as f:
         f.write("\n".join([str(r) for r in mean_R]))
 
     area = auc(mean_R, mean_P)
     return Ps, Rs, area
+
+def PR_test2train(sims_file, test_labels_file, train_labels_file, save_prefix="mean"):
+    sims, test_labels, train_labels = np.load(sims_file), np.load(test_labels_file), np.load(train_labels_file)
+    Ps, Rs = [], []
+    for i in xrange(sims.shape[0]):
+        sims_row, curr_label = sims[i], test_labels[i]
+        labels_row = train_labels[np.argsort(sims_row)]
+        y_true = [1 if curr_label==l else 0 for l in labels_row]
+        y_pred = [1 for _ in xrange(len(y_true))]
+        P, R = PR(y_true, y_pred, save=(True if i==20 else False))
+        Ps.append(P)
+        Rs.append(R)
+    Ps, Rs = np.array(Ps), np.array(Rs)
+    mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
+    np.save(save_prefix+"_P", mean_P)
+    np.save(save_prefix+"_R", mean_R)
+    with open(save_prefix+'_P.txt', 'w') as f:
+        f.write('\n'.join([str(p) for p in mean_P]))
+    with open(save_prefix+'_R.txt', 'w') as f:
+        f.write("\n".join([str(r) for r in mean_R]))
+
+    area = auc(mean_R, mean_P)
+    return Ps, Rs, area
+
+
 
 def PR(y_true, y_pred, save=False):
     """
@@ -115,9 +131,6 @@ def PR(y_true, y_pred, save=False):
             break
     R = [r*1.0/sum_true for r in R]
     P, R = [1.0] + P, [0.0] + R
-    if save:
-        np.save("P_20", P)
-        np.save("R_20", R)
     # do linear interpolate
     f = interp1d(R, P)
     new_R = np.linspace(0.0, 1.0, 1001, endpoint=True)
@@ -161,7 +174,9 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
 
 
 if __name__ == '__main__':
-    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
+    #P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
+
+    P_test2test, R_test2test, auc_test2test = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
     print auc_test2test
     #retrival_results("/home3/lhl/shape_seek_interface/train_feature_modelnet10.npy",
     #                 "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",

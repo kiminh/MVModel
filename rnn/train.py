@@ -47,7 +47,7 @@ def main(unused_argv):
         test()
 
 def train():
-    data =  model_data.read_data(FLAGS.data_path)
+    data =  model_data.read_data(FLAGS.data_path, n_views=FLAGS.n_views)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      learning_rate=FLAGS.learning_rate,
                                      keep_prob=FLAGS.keep_prob,
@@ -98,7 +98,7 @@ def train():
             epoch += 1
 
 def test():
-    data = model_data.read_data(FLAGS.data_path)
+    data = model_data.read_data(FLAGS.data_path, n_views=FLAGS.n_views)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,
@@ -109,7 +109,7 @@ def test():
     config = tf.ConfigProto()
     # config.gpu_options.allow_growth = True
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    with tf.Session(config=config) as sess:
+    with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
 

@@ -68,6 +68,9 @@ def PR_test2test(sims_file, labels_file, save_prefix="mean"):
         Rs.append(R)
     Ps, Rs = np.array(Ps), np.array(Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
+    mean_P[0] = 1.0
+    mean_R[0] = 0.0
+    #mean_P, mean_R = np.insert(mean_P, 0, 1.0), np.insert(mean_R, 0, 0.0)
     np.save(save_prefix+"_P", mean_P)
     np.save(save_prefix+"_R", mean_R)
     with open(save_prefix+'_P.txt', 'w') as f:
@@ -90,7 +93,12 @@ def PR_test2train(sims_file, test_labels_file, train_labels_file, save_prefix="m
         Ps.append(P)
         Rs.append(R)
     Ps, Rs = np.array(Ps), np.array(Rs)
+    np.save("Ps", Ps)
+    np.save("Rs", Rs)
     mean_P, mean_R = np.mean(Ps, axis=0), np.mean(Rs, axis=0)
+    mean_P[0] = 1.0
+    mean_R[0] = 0.0
+    #mean_P, mean_R = np.insert(mean_P, 0, 1.0), np.insert(mean_R, 0, 0.0)
     np.save(save_prefix+"_P", mean_P)
     np.save(save_prefix+"_R", mean_R)
     with open(save_prefix+'_P.txt', 'w') as f:
@@ -131,9 +139,11 @@ def PR(y_true, y_pred, save=False):
             break
     R = [r*1.0/sum_true for r in R]
     P, R = [1.0] + P, [0.0] + R
+    if save:
+        print P
     # do linear interpolate
     f = interp1d(R, P)
-    new_R = np.linspace(0.0, 1.0, 1001, endpoint=True)
+    new_R = np.linspace(0, 1.0, 1001, endpoint=True)
     return f(new_R), new_R
 
 def PR_curve(P_file, R_file):
@@ -171,13 +181,20 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
     print mAPs, aucs
     return mAPs, aucs
 
+def PR_modelnet10():
+    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", save_prefix='modelnet10_test2test')
+    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/train2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy", save_prefix='modelnet10_train2train')
+    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/all_labels.npy", save_prefix='modelnet10_all2all')
+    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
+    print(auc_test2test, auc_train2train, auc_all2all, auc_test2train)
+
+
 
 
 if __name__ == '__main__':
     #P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
-
-    P_test2test, R_test2test, auc_test2test = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
-    print auc_test2test
+    PR_modelnet10()
+    #P_test2test, R_test2test, auc_test2test = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
     #retrival_results("/home3/lhl/shape_seek_interface/train_feature_modelnet10.npy",
     #                 "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
     #                 "/home3/lhl/shape_seek_interface/test_feature_modelnet10.npy",

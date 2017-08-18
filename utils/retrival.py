@@ -188,12 +188,20 @@ def PR_modelnet10():
     P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
     print(auc_test2test, auc_train2train, auc_all2all, auc_test2train)
 
+def PR_modelnet40():
+    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
+    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/train2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/train_label.npy", save_prefix='modelnet40_train2train')
+    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/all_labels.npy", save_prefix='modelnet40_all2all')
+    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", '/home3/lhl/modelnet40_total_v2/train_label.npy', save_prefix='modelnet40_test2train')
+    print(auc_test2test, auc_train2train, auc_all2all, auc_test2train)
+
+
 
 
 
 if __name__ == '__main__':
     #P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
-    PR_modelnet10()
+    PR_modelnet40()
     #P_test2test, R_test2test, auc_test2test = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
     #retrival_results("/home3/lhl/shape_seek_interface/train_feature_modelnet10.npy",
     #                 "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",

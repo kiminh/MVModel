@@ -159,7 +159,7 @@ def maxpooling(fcs):
 
 def onehot(labels):
     label_count = np.shape(labels)[0]
-    labels2 = np.zeros(shape=[label_count, 40]) # TODO shape=[batch_size, n_classes]
+    labels2 = np.zeros(shape=[label_count, FLAGS.n_classes]) # TODO shape=[batch_size, n_classes]
     labels2[np.arange(label_count), labels] = 1
     return labels2
 

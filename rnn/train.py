@@ -98,7 +98,7 @@ def train():
             epoch += 1
 
 def test():
-    data = model_data.read_data(FLAGS.data_path, n_views=FLAGS.n_views)
+    data = model_data.read_data(FLAGS.data_path, n_views=FLAGS.n_views, read_train=False)
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
                                      batch_size=data.test.size(),
                                      is_training=False,

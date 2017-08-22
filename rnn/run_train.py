@@ -7,7 +7,7 @@ parser.add_argument('--dataset', default='modelnet10', help='dataset used to tra
 args = parser.parse_args()
 
 
-train_cmd_base = 'python train.py --train=True --n_hidden=128 --decoder_embedding_size=256 --n_views=12 --use_lstm=False --training_epoches=100 --save_epoches=1 --learning_rate=0.0002 --batch_size=32 '
+train_cmd_base = 'python train.py --train=True --n_hidden=128 --decoder_embedding_size=256 --n_views=12 --use_lstm=False --training_epoches=100 --save_epoches=1 --learning_rate=0.0002 --batch_size=32 --n_max_keep_model=100 '
 train_cmd = train_cmd_base
 
 data_paths = {"modelnet10": ["/home3/lhl/tensorflow-vgg-master-total/feature/train_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy", "/home3/lhl/tensorflow-vgg-master-total/feature/test_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/modelnet10/mvmodel.ckpt"],

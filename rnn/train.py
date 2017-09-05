@@ -130,6 +130,9 @@ def test():
             saver.restore(sess, model_path)
 
             _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
+            attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
+            attns_weights = np.transpose(attns_weights, (1, 0, 2))
+            np.save('modelnet10_test_attn', attns_weights)
             predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
             acc = accuracy(predict_labels, target_labels)
             acc.insert(0, model_path)

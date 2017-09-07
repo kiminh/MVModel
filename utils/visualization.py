@@ -132,6 +132,10 @@ def show_attention2(attn_file, model_index=0):
     cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
     cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
 
+def attn2txt(attn_weights, name="attn"):
+    with open(name+'.txt', 'w') as f:
+        for attn in attn_weights:
+            f.write(' '.join([str(a) for a in attn])+'\n')
 
 # 4, 7, 12
 # 64,65,66

@@ -132,6 +132,49 @@ def show_attention2(attn_file, model_index=0):
     cbar = fig.colorbar(cax, ticks=[np.min(model_attn), np.max(model_attn)])
     cbar.ax.set_yticklabels([str(np.min(model_attn)), str(np.max(model_attn))])
 
+def attn2txt(attn_weights, name="attn"):
+    with open(name+'.txt', 'w') as f:
+        for attn in attn_weights:
+            f.write(' '.join([str(a) for a in attn])+'\n')
+
+def show_metric_N(metric_dir, metric_name, N=1000):
+    import os
+    micro_p = np.load(os.path.join(metric_dir, "micro_p.npy"))
+    micro_r = np.load(os.path.join(metric_dir, "micro_r.npy"))
+    micro_f1 = np.load(os.path.join(metric_dir, "micro_f1.npy"))
+    micro_mAP = np.load(os.path.join(metric_dir, "micro_mAP.npy"))
+    micro_ndcg = np.load(os.path.join(metric_dir, "micro_ndcg.npy"))
+
+    macro_p = np.load(os.path.join(metric_dir, "macro_p.npy"))
+    macro_r = np.load(os.path.join(metric_dir, "macro_r.npy"))
+    macro_f1 = np.load(os.path.join(metric_dir, "macro_f1.npy"))
+    macro_mAP = np.load(os.path.join(metric_dir, "macro_mAP.npy"))
+    macro_ndcg = np.load(os.path.join(metric_dir, "macro_ndcg.npy"))
+
+    plt.subplots(1,1)
+    plt.plot([i+1 for i in xrange(micro_p.shape[0])], micro_p.tolist(), label="micro_p")
+    plt.plot([i + 1 for i in xrange(micro_r.shape[0])], micro_r.tolist(), label="micro_r")
+    plt.plot([i + 1 for i in xrange(micro_f1.shape[0])], micro_f1.tolist(), label="micro_f1")
+    plt.plot([i + 1 for i in xrange(micro_mAP.shape[0])], micro_mAP.tolist(), label="micro_mAP")
+    plt.plot([i + 1 for i in xrange(micro_ndcg.shape[0])], micro_ndcg.tolist(), label="micro_ndcg")
+    plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.77] * 1000, label="rmvcnn-micro-r")
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+               ncol=2, mode="expand", borderaxespad=0.)
+
+    plt.subplots(1,1)
+    plt.plot([i + 1 for i in xrange(macro_p.shape[0])], macro_p.tolist(), label="macro_p")
+    plt.plot([i + 1 for i in xrange(macro_r.shape[0])], macro_r.tolist(), label="macro_r")
+    plt.plot([i + 1 for i in xrange(macro_f1.shape[0])], macro_f1.tolist(), label="macro_f1")
+    plt.plot([i + 1 for i in xrange(macro_mAP.shape[0])], macro_mAP.tolist(), label="macro_mAP")
+    plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], macro_ndcg.tolist(), label="macro_ndcg")
+    plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.625] * 1000, label="rmvcnn-macro-r")
+
+
+    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+               ncol=2, mode="expand", borderaxespad=0.)
+
+    plt.xlabel("N")
+
 
 # 4, 7, 12
 # 64,65,66
@@ -144,5 +187,6 @@ if __name__ == '__main__':
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=euclidean)
     # show_proj_w_dis(proj_file, distance=cosine)
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
-    show_attention('../ignore/data/attention_weights_richdata.npy', model_index=567)
+    # show_attention('../ignore/data/attention_weights_richdata.npy', model_index=567)
+    show_metric_N('/home/shangmingyang/wuque/projects/evaluator/test_normal', 'macro_p')
     plt.show()

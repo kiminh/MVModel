@@ -213,6 +213,49 @@ def shapenet55():
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train2train_euclidean')
     retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/test_normal', max_n=1000)
 
+def merge_metrics_shapenet55(metrics_dir, save_dir):
+    import csv, glob
+    metrics_files = glob.glob(os.path.join(metrics_dir, 'mvmodel.summary-*.csv'))
+    metrics_files.sort(key=lambda name: int(name[name.rindex('-')+1 : name.rindex('.csv')]))
+    micro_p, micro_r, micro_f1, micro_mAP, micro_ndcg = [], [], [], [], []
+    macro_p, macro_r, macro_f1, macro_mAP, macro_ndcg = [], [], [], [], []
+
+    for file in metrics_files:
+        print(file)
+        with open(file, 'rb') as f:
+            metrics = f.readline()
+            reader = csv.reader(f)
+            for row in reader:
+                if row[0] == "microALL":
+                    micro_p.append(row[1])
+                    micro_r.append(row[2])
+                    micro_f1.append(row[3])
+                    micro_mAP.append(row[4])
+                    micro_ndcg.append(row[5])
+                elif row[0] == 'macroALL':
+                    macro_p.append(row[1])
+                    macro_r.append(row[2])
+                    macro_f1.append(row[3])
+                    macro_mAP.append(row[4])
+                    macro_ndcg.append(row[5])
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    np.save(os.path.join(save_dir, 'micro_p'), np.array(micro_p))
+    np.save(os.path.join(save_dir, 'micro_r'), np.array(micro_r))
+    np.save(os.path.join(save_dir, 'micro_f1'), np.array(micro_f1))
+    np.save(os.path.join(save_dir, 'micro_mAP'), np.array(micro_mAP))
+    np.save(os.path.join(save_dir, 'micro_ndcg'), np.array(micro_ndcg))
+
+    np.save(os.path.join(save_dir, 'macro_p'), np.array(macro_p))
+    np.save(os.path.join(save_dir, 'macro_r'), np.array(macro_r))
+    np.save(os.path.join(save_dir, 'macro_f1'), np.array(macro_f1))
+    np.save(os.path.join(save_dir, 'macro_mAP'), np.array(macro_mAP))
+    np.save(os.path.join(save_dir, 'macro_ndcg'), np.array(macro_ndcg))
+    
+
+
+
+
 
 if __name__ == '__main__':
 
@@ -226,7 +269,8 @@ if __name__ == '__main__':
     #                 save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10")
     #PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
-    shapenet55()
+    # shapenet55()
+    merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator', '/home/shangmingyang/wuque/projects/evaluator/test_normal')
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')
     #generate_labels_all('/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels')
     #retrival_metrics_all('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_all_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels.npy')

@@ -209,7 +209,7 @@ def retrival_shapenet(sims_file, ids_file, save_dir='/home1/shangmingyang/data/3
 
 
 def shapenet55():
-    #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean')
+    generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train2train_euclidean')
     retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/test_normal', max_n=1000)
 
@@ -251,7 +251,7 @@ def merge_metrics_shapenet55(metrics_dir, save_dir):
     np.save(os.path.join(save_dir, 'macro_f1'), np.array(macro_f1))
     np.save(os.path.join(save_dir, 'macro_mAP'), np.array(macro_mAP))
     np.save(os.path.join(save_dir, 'macro_ndcg'), np.array(macro_ndcg))
-    
+
 
 
 
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     #                 save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10")
     #PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
-    # shapenet55()
+    #shapenet55()
     merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator', '/home/shangmingyang/wuque/projects/evaluator/test_normal')
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')
     #generate_labels_all('/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels')

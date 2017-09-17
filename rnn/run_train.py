@@ -8,7 +8,7 @@ parser.add_argument('--train', help='train mode or test mode')
 args = parser.parse_args()
 
 
-train_cmd_base = 'python train.py --n_hidden=512 --decoder_embedding_size=256 --n_views=12 --use_lstm=False --training_epoches=100 --save_epoches=1 --learning_rate=0.00005 --batch_size=32 --n_max_keep_model=100 '
+train_cmd_base = 'python train.py --n_hidden=512 --decoder_embedding_size=256 --n_views=12 --use_lstm=False --training_epoches=100 --save_epoches=1 --learning_rate=0.00001 --batch_size=32 --n_max_keep_model=100 '
 train_cmd = train_cmd_base
 
 data_paths = {"modelnet10": ["/home3/lhl/tensorflow-vgg-master-total/feature/train_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy", "/home3/lhl/tensorflow-vgg-master-total/feature/test_12p_vgg19_epo48_do05_sigmoid7_feature_class10.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", "/home1/shangmingyang/data/3dmodel/trained_seq_mvmodel/modelnet10/", "modelnet10.csv"],
@@ -25,7 +25,7 @@ elif args.dataset == "modelnet40":
     train_cmd = train_cmd_base + '--n_classes=40 --train_feature_file=%s --train_label_file=%s --test_feature_file=%s --test_label_file=%s --save_seq_embeddingmvmodel_path=%s --checkpoint_path=%s --test_acc_file=%s '%(path[0], path[1], path[2], path[3], os.path.join(path[4], "mvmodel.ckpt"), os.path.join(path[4], "checkpoint"), path[5])
 elif args.dataset == 'shapenet55':
     path = data_paths["shapenet55"]
-    train_cmd = train_cmd_base + '--n_classes=55 --train_feature_file=%s --train_label_file=%s --test_feature_file=%s --test_label_file=%s --save_seq_embeddingmvmodel_path=%s --checkpoint_path=%s --test_acc_file=%s --enrich_shapenet=%s'%(path[0], path[1], path[2], path[3], os.path.join(path[4], "mvmodel.ckpt"), os.path.join(path[4], "checkpoint"), path[5], True)
+    train_cmd = train_cmd_base + '--n_classes=55 --train_feature_file=%s --train_label_file=%s --test_feature_file=%s --test_label_file=%s --save_seq_embeddingmvmodel_path=%s --checkpoint_path=%s --test_acc_file=%s --enrich_shapenet=%s'%(path[0], path[1], path[2], path[3], os.path.join(path[4], "mvmodel.ckpt"), os.path.join(path[4], "checkpoint"), path[5], False)
 else:
     print("dataset muse one of [modelnet10, modelnet40, shapenet55], can not be %s" %(FLAGS.dataset))
     sys.exit()

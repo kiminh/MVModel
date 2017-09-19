@@ -107,6 +107,7 @@ class SequenceRNNModel(object):
             for i in xrange(self.decoder_symbols_size):
                 constant_embedding[i] = np.array([i], dtype=np.float32)
             self.fake_embedding =tf.constant(constant_embedding)
+        self.attns_weights = None
         if self.use_attention:
             # attention
             top_states = [tf.reshape(e, [-1, 1, self.decoder_n_hidden]) for e in self.encoder_outputs]
@@ -360,8 +361,9 @@ class SequenceRNNModel(object):
         if not forward_only:
             return outputs[0], outputs[1], None, None #Gradient, loss, no outputs, no encoder_hidden
         else:
-            attns_weights = session.run(self.attns_weights, input_feed)
-            return None, None, outputs, attns_weights #No gradient, no loss, outputs logits, encoder_hidden
+            #attns_weights = session.run(self.attns_weights, input_feed)
+            encoder_hidden = session.run(self.encoder_hidden_state, input_feed)
+            return None, None, outputs, encoder_hidden #No gradient, no loss, outputs logits, encoder_hidden
 
     def get_batch(self, batch_encoder_inputs, batch_labels, batch_size=10):
         """

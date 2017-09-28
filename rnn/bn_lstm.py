@@ -138,6 +138,6 @@ def batch_norm(x, name_scope, training, epsilon=1e-3, decay=0.999):
         def population_statistics():
             #return tf.nn.batch_normalization(x, pop_mean, pop_var, offset, scale, epsilon)
             return tf.contrib.layers.batch_norm(x, center=True, scale=True, is_training=training)
-        #return tf.contrib.layers.batch_norm(x, center=True, scale=True, is_training=False)
+        return tf.contrib.layers.batch_norm(x, center=True, scale=True, is_training=training)
 
-        return tf.cond(training, batch_statistics, population_statistics)
+        #return tf.cond(training, batch_statistics, population_statistics)

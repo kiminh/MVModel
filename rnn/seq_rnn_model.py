@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib import rnn
 from tensorflow.contrib.legacy_seq2seq import embedding_rnn_decoder, sequence_loss, rnn_decoder, embedding_attention_decoder
 from tensorflow.python.util import nest
+from bn_lstm import BNLSTMCell
 
 import numpy as np
 
@@ -84,7 +85,8 @@ class SequenceRNNModel(object):
 
     def single_cell(self, hidden_size):
         if self.use_lstm:
-            return rnn.BasicLSTMCell(hidden_size)
+            #return BNLSTMCell(hidden_size, self.is_training)
+            return rnn.BasicLSTMCell(hidden_size, initializer=tf.orthogonal_initializer())
         else:
             return rnn.GRUCell(hidden_size)
 
@@ -121,8 +123,9 @@ class SequenceRNNModel(object):
             self.outputs, self.decoder_hidden_state = embedding_rnn_decoder(self.decoder_inputs[:self.decoder_n_steps], self.encoder_hidden_state,
                 decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size, output_projection=self.decoder_output_projection, feed_previous=self.feed_previous)
         else:
+            self.encoder_hidden_bn = self.encoder_hidden_state# tf.contrib.layers.batch_norm(self.encoder_hidden_state, center=True, scale=True, is_training=self.is_training)
             self.outputs, self.decoder_hidden_state, self.attns_weights = self.self_embedding_attention_decoder(self.decoder_inputs[:self.decoder_n_steps],
-                self.encoder_hidden_state, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
+                self.encoder_hidden_bn, self.attention_states, decoder_cell, self.decoder_symbols_size, self.decoder_embedding_size,
                 output_projection=self.decoder_output_projection, feed_previous=self.feed_previous, num_heads=self.num_heads, init_embedding=self.init_decoder_embedding)
         # do wx+b for output, to generate decoder_symbols_size length
         for i in xrange(self.decoder_n_steps-1): #ignore last output, we only care 40 classes
@@ -136,8 +139,9 @@ class SequenceRNNModel(object):
         # cost function
         if self.is_training:
             self.cost = sequence_loss(self.outputs, self.targets, self.target_weights)
+            #self.optimizer = tf.train.MomentumOptimizer(learning_rate=self.learning_rate, momentum=0.9).minimize(self.cost)
             self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
-            # self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
+            #self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
     def _extract_argmax(self, embedding, output_projection=None):
         def loop_function(prev, _):
             if output_projection is not None:

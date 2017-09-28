@@ -60,14 +60,15 @@ def train():
                                      #init_decoder_embedding=model_data.read_class_yes_embedding(FLAGS.data_path))
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    #config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    config.gpu_options.per_process_gpu_memory_fraction = 0.5
     if not os.path.exists(get_modelpath()):
         os.makedirs(get_modelpath())
-    with tf.Session() as sess:
+    with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
         sess.run(init)
+        #saver.restore(sess, "/home1/shangmingyang/data/3dmodel/mvmodel_result/best/modelnet40_128_256_0.0002_1.0_0.9331/seq_mvmodel.ckpt-10")
 
         epoch = 1
         while epoch <= FLAGS.training_epoches:
@@ -108,9 +109,9 @@ def test():
                                      use_embedding=FLAGS.use_embedding,
                                      num_heads=FLAGS.num_heads)
     config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
+    config.gpu_options.allow_growth = True
     config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    with tf.Session() as sess:
+    with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
 
@@ -125,7 +126,7 @@ def test():
                                                                                                 test_decoder_inputs,
                                                                                                 batch_size=test_data.size())
         #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_512_256_0.0002_0.8685_0.7111/mvmodel.ckpt-1"]
-        models = models[9:]
+        #models = models[29:]
         for model_path in models:
             print(model_path)
             saver.restore(sess, model_path)

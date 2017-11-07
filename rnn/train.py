@@ -110,7 +110,7 @@ def test():
                                      num_heads=FLAGS.num_heads)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
-    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    #config.gpu_options.per_process_gpu_memory_fraction = 0.3
     with tf.Session(config=config) as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver()
@@ -125,18 +125,22 @@ def test():
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
                                                                                                 batch_size=test_data.size())
-        #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_512_256_0.0002_0.8685_0.7111/mvmodel.ckpt-1"]
-        #models = models[29:]
+        #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_color_128_256_0.0001_0.8661_0.7691/mvmodel.ckpt-10"]
+        #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_256_512_0.0002_0.8510_0.7511/mvmodel.ckpt-33"]
+        models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_nocolor_128_256_0.00005_0.5_0.8531_0.7471/mvmodel.ckpt-113"]
+        #models = models[52:]
         for model_path in models:
             print(model_path)
             saver.restore(sess, model_path)
 
             _, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
-            #np.save("shapenet55_test_hidden", hidden)
+            np.save("/home1/shangmingyang/data/ImgJoint3D/feature/shapenet55_nocolor_val", hidden)
             #attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
             #attns_weights = np.transpose(attns_weights, (1, 0, 2))
             #np.save('modelnet10_test_attn', attns_weights)
             predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
+            print "predict:", predict_labels
+            np.save("predict", predict_labels)
             acc = accuracy(predict_labels, target_labels)
             acc.insert(0, model_path)
             with open(FLAGS.test_acc_file, 'a') as f:

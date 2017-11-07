@@ -3,6 +3,7 @@ from sklearn.metrics import auc
 import numpy as np
 from scipy.interpolate import interp1d
 import os
+import threading
 from rank_metrics import mean_average_precision, average_precision
 
 def generate_retrival_distance(test_feature_file, train_feature_file, savepath='test_train'):
@@ -13,7 +14,7 @@ def generate_retrival_distance(test_feature_file, train_feature_file, savepath='
 
 def generate_distance_test2test(test_feature_file, savepath='test_test'):
     test_data = np.load(test_feature_file)
-    result = [euclidean(test1, test2) for test1 in test_data for test2 in test_data]
+    result = [cosine(test1, test2) for test1 in test_data for test2 in test_data]
     result = np.reshape(np.array(result), [test_data.shape[0], test_data.shape[0]])
     np.save(savepath, result)
 
@@ -182,17 +183,17 @@ def retrival_results(train_feature_file, train_label_file, test_feature_file, te
     return mAPs, aucs
 
 def PR_modelnet10():
-    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", save_prefix='modelnet10_test2test')
-    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/train2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy", save_prefix='modelnet10_train2train')
-    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/all_labels.npy", save_prefix='modelnet10_all2all')
-    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
+    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", save_prefix='lhl_modelnet10_test2test')
+    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10/train2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy", save_prefix='lhl_modelnet10_train2train')
+    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/all_labels.npy", save_prefix='lhl_modelnet10_all2all')
+    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='lhl_modelnet10_test2train')
     print(auc_test2test, auc_train2train, auc_all2all, auc_test2train)
 
 def PR_modelnet40():
-    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
-    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/train2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/train_label.npy", save_prefix='modelnet40_train2train')
-    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/all_labels.npy", save_prefix='modelnet40_all2all')
-    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", '/home3/lhl/modelnet40_total_v2/train_label.npy', save_prefix='modelnet40_test2train')
+    P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='lhl_modelnet40_test2test')
+    P_train2train, R_train2train, auc_train2train = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet40/train2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/train_label.npy", save_prefix='lhl_modelnet40_train2train')
+    P_all2all, R_all2all, auc_all2all = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet40/all2all_euclidean.npy", "/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/all_labels.npy", save_prefix='lhl_modelnet40_all2all')
+    P_test2train, R_test2train, auc_test2train = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet40/test2train_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", '/home3/lhl/modelnet40_total_v2/train_label.npy', save_prefix='lhl_modelnet40_test2train')
     print(auc_test2test, auc_train2train, auc_all2all, auc_test2train)
 
 def retrival_shapenet(sims_file, ids_file, save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55', max_n=1000):
@@ -208,10 +209,48 @@ def retrival_shapenet(sims_file, ids_file, save_dir='/home1/shangmingyang/data/3
                 f.write(' '.join([modelid, str(dis)])+'\n')
 
 
-def shapenet55():
-    generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean')
-    #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train2train_euclidean')
-    retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/test_normal', max_n=1000)
+def shapenet55_color():
+    def test2test():
+        generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/test_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_test2test_euclidean')
+        retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/test_normal', max_n=1000)
+
+    def train2train():
+        generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/train_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_train2train_euclidean')
+        retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_train2train_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_train_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/train_normal', max_n=1000)
+
+    def val2val():
+        generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/val_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_val2val_euclidean')
+        retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_val2val_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_val_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/val_normal', max_n=1000)
+    t_test = threading.Thread(target=test2test)
+    t_test.start()
+    t_train = threading.Thread(target=train2train)
+    t_train.start()
+    t_val = threading.Thread(target=val2val)
+    t_val.start()
+
+
+
+
+
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/test_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_test2test_euclidean')
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/train_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_train2train_euclidean')
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/val_feature_v10_SNC_filternums1024.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_val2val_euclidean')
+    #retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/test_normal', max_n=1000)
+    #retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_train2train_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_train_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/train_normal', max_n=1000)
+    #retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/shapenet55_color_val2val_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_val_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/color/val_normal', max_n=1000)
+
+def shapenet55_nocolor():
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/train_feature_v10_SN_filternums512.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_train2train_euclidean')
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/test_feature_v10_SN_filternums512.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_test2test_euclidean')
+    #generate_distance_test2test('/home3/lhl/cnn-text-classification-tf-shapenet/feature/val_feature_v10_SN_filternums512.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_val2val_euclidean')
+    retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_train2train_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_train_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/train_normal', max_n=1000)
+    print "retrival shapenet nocolor train2train finished"
+    retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/test_normal', max_n=1000)
+    print "retrival shapenet nocolor test2test finished"
+    retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/lhl_shapenet55_nocolor_val2val_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_val_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/shapenet55/nocolor/val_normal', max_n=1000)
+    print "retrival shapenet nocolor val2val finished"
+
+
 
 def merge_metrics_shapenet55(metrics_dir, save_dir):
     import csv, glob
@@ -262,15 +301,17 @@ if __name__ == '__main__':
     #P_test2test, R_test2test, auc_test2test = PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet40/test2test_euclidean.npy", "/home3/lhl/modelnet40_total_v2/test_label.npy", save_prefix='modelnet40_test2test')
     #PR_modelnet40()
     #P_test2test, R_test2test, auc_test2test = PR_test2train("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2train_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy", '/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy', save_prefix='modelnet10_test2train')
-    #retrival_results("/home3/lhl/shape_seek_interface/train_feature_modelnet10.npy",
-    #                 "/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
-    #                 "/home3/lhl/shape_seek_interface/test_feature_modelnet10.npy",
-    #                 "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
-    #                 save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10")
+    #retrival_results("/home3/lhl/cnn-text-classification-tf-modelnet10/feature/train_feature_v10_modelnet10.npy",
+                     #"/home3/lhl/modelnet10_v2/feature10/train_labels_modelnet10.npy",
+                     #"/home3/lhl/cnn-text-classification-tf-modelnet10/feature/test_feature_v10_modelnet10.npy",
+                     #"/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy",
+                     #save_dir="/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/lhl/modelnet10")
+    #PR_modelnet40()
     #PR_test2test("/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10/test2test_euclidean.npy", "/home3/lhl/modelnet10_v2/feature10/test_labels_modelnet10.npy")
     #retrival_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_train_euclidean')
-    #shapenet55()
-    merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator', '/home/shangmingyang/wuque/projects/evaluator/test_normal')
+    shapenet55_nocolor()
+    #shapenet55_color()
+    #merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator', '/home/shangmingyang/wuque/projects/evaluator/test_normal')
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')
     #generate_labels_all('/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels')
     #retrival_metrics_all('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_all_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels.npy')

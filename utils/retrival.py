@@ -136,7 +136,7 @@ def PR(y_true, y_pred, save=False):
         P.append(TP*1.0/(TP+FP))
         R.append(TP)
         if TP == sum_true:
-            breakt
+            break
     R = [r*1.0/sum_true for r in R]
     P, R = [1.0] + P, [0.0] + R
     if save:
@@ -209,7 +209,7 @@ def retrival_shapenet(sims_file, ids_file, save_dir='/home1/shangmingyang/data/3
 
 
 def shapenet55():
-    #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean')
+    generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean')
     #generate_distance_test2test('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_train2train_euclidean')
     retrival_shapenet('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_test2test_euclidean.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/shapenet55_v1_test_ids.npy', save_dir='/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/shapenet55/test_normal', max_n=1000)
 
@@ -253,7 +253,7 @@ def merge_metrics_shapenet55(metrics_dir, save_dir, dataset="train_normal"):
     np.save(os.path.join(save_dir, dataset+'/macro_f1'), np.array(macro_f1))
     np.save(os.path.join(save_dir, dataset+'/macro_mAP'), np.array(macro_mAP))
     np.save(os.path.join(save_dir, dataset+'/macro_ndcg'), np.array(macro_ndcg))
-    
+
 
 
 

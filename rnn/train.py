@@ -63,7 +63,7 @@ def train():
     #config.gpu_options.per_process_gpu_memory_fraction = 0.5
     if not os.path.exists(get_modelpath()):
         os.makedirs(get_modelpath())
-    with tf.Session(config=config) as sess:
+    with tf.Session() as sess:
         seq_rnn_model.build_model()
         saver = tf.train.Saver(max_to_keep=FLAGS.n_max_keep_model)
         init = tf.global_variables_initializer()
@@ -99,8 +99,9 @@ def train():
 
 def test():
     data = model_data.read_data(FLAGS.data_path, n_views=FLAGS.n_views, read_train=False)
+    test_data = data.test
     seq_rnn_model = SequenceRNNModel(FLAGS.n_input_fc, FLAGS.n_views, FLAGS.n_hidden, FLAGS.decoder_embedding_size, FLAGS.n_classes+1, FLAGS.n_hidden,
-                                     batch_size=data.test.size(),
+                                     batch_size=test_data.size(),
                                      is_training=False,
                                      use_lstm=FLAGS.use_lstm,
                                      use_attention=FLAGS.use_attention,
@@ -117,22 +118,23 @@ def test():
             models = f.readlines()[1:]
             models = [line.split(":")[1] for line in models]
             models = [line[2:-2] for line in models]
-
-        test_encoder_inputs, test_decoder_inputs = data.test.next_batch(data.test.size(), shuffle=False)
+        test_encoder_inputs, test_decoder_inputs = test_data.next_batch(test_data.size(), shuffle=False)
         target_labels = get_target_labels(test_decoder_inputs)
         test_encoder_inputs = test_encoder_inputs.reshape((-1, FLAGS.n_views, FLAGS.n_input_fc))
         test_encoder_inputs, test_decoder_inputs, test_target_weights = seq_rnn_model.get_batch(test_encoder_inputs,
                                                                                                 test_decoder_inputs,
-                                                                                                batch_size=data.test.size())
-        #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/modelnet40_128_256_0.0002_1.0_0.9331/seq_mvmodel.ckpt-10"]
+                                                                                                batch_size=test_data.size())
+        #models = ["/home1/shangmingyang/data/3dmodel/mvmodel_result/best/shapenet55_512_256_0.0002_0.8685_0.7111/mvmodel.ckpt-1"]
+        models = models[9:]
         for model_path in models:
             print(model_path)
             saver.restore(sess, model_path)
 
-            _, _, outputs, attns_weights = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
-            attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
-            attns_weights = np.transpose(attns_weights, (1, 0, 2))
-            np.save('modelnet10_test_attn', attns_weights)
+            _, _, outputs, hidden = seq_rnn_model.step(sess, test_encoder_inputs, test_decoder_inputs, test_target_weights, forward_only=True)  # don't do optimize
+            #np.save("shapenet55_test_hidden", hidden)
+            #attns_weights = np.array([attn_weight[0] for attn_weight in attns_weights])
+            #attns_weights = np.transpose(attns_weights, (1, 0, 2))
+            #np.save('modelnet10_test_attn', attns_weights)
             predict_labels = seq_rnn_model.predict(outputs, all_min_no=False)
             acc = accuracy(predict_labels, target_labels)
             acc.insert(0, model_path)
@@ -158,9 +160,16 @@ def accuracy(predict, target, mode="average_class"):
     elif mode == "average_class":
         target_classes = np.unique(target)
         acc_classes = []
+        acc_classes_map = {}
         for class_id in target_classes:
             predict_at_class = predict[np.argwhere(target == class_id).reshape([-1])]
             acc_classes.append(np.mean(np.equal(predict_at_class, class_id)))
+            acc_classes_map[class_id] = acc_classes[-1]
+        #print("class accuracy:", acc_classes_map)
+        with open("class_acc.csv", 'w') as f:
+            w = csv.writer(f)
+            for k in acc_classes_map:
+                w.writerow([k, acc_classes_map[k]])
         return  [np.mean(np.equal(predict, target)), np.mean(np.array(acc_classes))]
 
 def get_modelpath():

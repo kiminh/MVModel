@@ -22,6 +22,8 @@ tf.flags.DEFINE_string('test_label_file', '/home3/lhl/modelnet40_total_v2/test_l
 
 tf.flags.DEFINE_string("class_yes_feature_file", '/home1/shangmingyang/data/3dmodel/seq_data/cluster_center_mat_40.npy', "file path for saving class yes feature")
 tf.flags.DEFINE_boolean("enrich_data", False, "whether enrich data with rolling views")
+tf.flags.DEFINE_boolean("enrich_shapenet", False, "whether enrich shapenet data with duplicate classes whose has few of numbers")
+tf.flags.DEFINE_integer("min_shapenet_class_count", 700, "min count of class in shapenet")
 
 FLAGS = tf.flags.FLAGS
 
@@ -112,13 +114,23 @@ def read_data(data_dir, n_views=12, roll_number=12, read_train=True, read_test=T
     train_dataset, test_dataset = None, None
     if read_train:
         train_fcs = np.load(os.path.join(data_dir, FLAGS.train_feature_file))
+        #train_fcs = np.array([[[1,1,1,1],[11,11,11,11]],[[2,2,2,2],[22,22,22,22]],[[3,3,3,3],[33,33,33,33]],[[4,4,4,4],[44,44,44,44]],[[5,5,5,5],[55,55,55,55]], [[6,6,6,6],[66,66,66,66]]])
         train_fcs = multiview(train_fcs, n_views)
-        #train_fcs = maxpooling(train_fcs)
         train_labels = np.load(os.path.join(FLAGS.data_dir, FLAGS.train_label_file))
+        #train_labels = np.array([0,1,1,2,3,4])
+        if FLAGS.enrich_shapenet:
+            train_labels_range = labels_statistic(train_labels)
         train_labels = onehot(train_labels)
         if FLAGS.enrich_data:
             train_fcs, train_labels = roll_enrich(train_fcs, train_labels, roll_number)
             print train_fcs.shape, train_labels.shape
+        if FLAGS.enrich_shapenet:
+            for label, statistic in train_labels_range.items():
+                start, count = statistic[0], statistic[1]
+                if count < FLAGS.min_shapenet_class_count:
+                    repeat_num = FLAGS.min_shapenet_class_count / count - 1
+                    train_fcs = np.append(train_fcs, np.repeat(train_fcs[start: start+count], repeat_num, axis=0), axis=0)
+                    train_labels = np.append(train_labels, np.repeat(train_labels[start: start+count], repeat_num, axis=0), axis=0)
         train_dataset = DataSet(None, train_fcs, train_labels)
 
     if read_test:
@@ -140,6 +152,14 @@ def roll_enrich(fcs, labels, roll_number):
     new_labels = np.concatenate([np.copy(labels) for _ in xrange(roll_number)])
     return new_fcs, new_labels
 
+def labels_statistic(labels):
+    label_range = {}
+    for i in xrange(labels.shape[0]):
+        if labels[i] not in label_range:
+            label_range[labels[i]] = [i, 1] #start position, count
+        else:
+            label_range[labels[i]][1] += 1 #add count
+    return label_range
 
 def multiview(fcs, n_views=12):
     fcs2 = np.zeros(shape=[fcs.shape[0], n_views, fcs.shape[2]])
@@ -219,7 +239,8 @@ def read_class_yes_embedding(data_dir):
 
 
 if __name__ == '__main__':
-    run_readdata_demo(FLAGS.data_dir)
+    read_data("", read_test=False, n_views=2)
+    #run_readdata_demo(FLAGS.data_dir)
     # label_onehot = np.zeros([40])
     # label_onehot[2] = 1
     # print label2sequence(label_onehot)

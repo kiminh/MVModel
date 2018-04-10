@@ -215,7 +215,7 @@ def shapenet55():
 
 def merge_metrics_shapenet55(metrics_dir, save_dir, dataset="train_normal"):
     import csv, glob
-    metrics_files = glob.glob(os.path.join(metrics_dir, 'shapenet-color.summary-*.csv'))
+    metrics_files = glob.glob(os.path.join(metrics_dir, 'shapenet55.summary-*.csv'))
     metrics_files.sort(key=lambda name: int(name[name.rindex('-')+1 : name.rindex('.csv')]))
     micro_p, micro_r, micro_f1, micro_mAP, micro_ndcg = [], [], [], [], []
     macro_p, macro_r, macro_f1, macro_mAP, macro_ndcg = [], [], [], [], []
@@ -242,6 +242,8 @@ def merge_metrics_shapenet55(metrics_dir, save_dir, dataset="train_normal"):
                     macro_ndcg.append(row[5])
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+    if not os.path.exists(os.path.join(save_dir, dataset)):
+        os.makedirs(os.path.join(save_dir, dataset))
     np.save(os.path.join(save_dir, dataset+'/micro_p'), np.array(micro_p))
     np.save(os.path.join(save_dir, dataset+'/micro_r'), np.array(micro_r))
     np.save(os.path.join(save_dir, dataset+'/micro_f1'), np.array(micro_f1))
@@ -276,9 +278,9 @@ if __name__ == '__main__':
     # merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-nocolor', '/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-nocolor', dataset='val_normal')
     # merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-nocolor', '/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-nocolor', dataset='test_normal')
 
-    merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', '/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', dataset='train_normal')
-    merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', '/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', dataset='val_normal')
-    merge_metrics_shapenet55('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', '/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color', dataset='test_normal')
+    merge_metrics_shapenet55('/home1/shangmingyang/projects/evaluator/wxy/shapenet', '/home1/shangmingyang/projects/evaluator/wxy/shapenet', dataset='train_normal')
+    merge_metrics_shapenet55('/home1/shangmingyang/projects/evaluator/wxy/shapenet', '/home1/shangmingyang/projects/evaluator/wxy/shapenet', dataset='val_normal')
+    merge_metrics_shapenet55('/home1/shangmingyang/projects/evaluator/wxy/shapenet', '/home1/shangmingyang/projects/evaluator/wxy/shapenet', dataset='test_normal')
 
     #retrival_all_distance('/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_test_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_train_hidden.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/modelnet10_all2all_euclidean')
     #generate_labels_all('/home3/lhl/modelnet40_total_v2/test_label.npy', '/home3/lhl/modelnet40_total_v2/train_label.npy', '/home1/shangmingyang/data/3dmodel/mvmodel_result/retrival/all_labels')

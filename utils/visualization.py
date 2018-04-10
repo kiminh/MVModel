@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.spatial.distance import euclidean, cosine
+import csv, glob, os
 
 
 random_image = np.random.random([100, 500])
@@ -137,7 +138,7 @@ def attn2txt(attn_weights, name="attn"):
         for attn in attn_weights:
             f.write(' '.join([str(a) for a in attn])+'\n')
 
-def show_metric_N(metric_dir, metric_name, N=1000):
+def show_metric_N(metric_dir, N=1000):
     import os
     micro_p = np.load(os.path.join(metric_dir, "micro_p.npy"))
     micro_r = np.load(os.path.join(metric_dir, "micro_r.npy"))
@@ -157,7 +158,7 @@ def show_metric_N(metric_dir, metric_name, N=1000):
     plt.plot([i + 1 for i in xrange(micro_f1.shape[0])], micro_f1.tolist(), label="micro_f1")
     plt.plot([i + 1 for i in xrange(micro_mAP.shape[0])], micro_mAP.tolist(), label="micro_mAP")
     plt.plot([i + 1 for i in xrange(micro_ndcg.shape[0])], micro_ndcg.tolist(), label="micro_ndcg")
-    plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.77] * 1000, label="rmvcnn-micro-r")
+    # plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.77] * 1000, label="rmvcnn-micro-r")
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                ncol=2, mode="expand", borderaxespad=0.)
 
@@ -167,13 +168,50 @@ def show_metric_N(metric_dir, metric_name, N=1000):
     plt.plot([i + 1 for i in xrange(macro_f1.shape[0])], macro_f1.tolist(), label="macro_f1")
     plt.plot([i + 1 for i in xrange(macro_mAP.shape[0])], macro_mAP.tolist(), label="macro_mAP")
     plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], macro_ndcg.tolist(), label="macro_ndcg")
-    plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.625] * 1000, label="rmvcnn-macro-r")
+    # plt.plot([i + 1 for i in xrange(macro_ndcg.shape[0])], [0.625] * 1000, label="rmvcnn-macro-r")
 
 
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                ncol=2, mode="expand", borderaxespad=0.)
 
     plt.xlabel("N")
+
+def PR(pr_file):
+    p, r = [], []
+    with open(pr_file) as f:
+        f.readline()
+        reader = csv.reader(f)
+        for row in reader:
+            if row[0] == "microALL":
+                p.append(row[1])
+                r.append(row[2])
+    import pylab as pl
+    pl.plot(r, p)
+    pl.show()
+
+def PR_csv2txt(pr_file):
+    P, R = [], []
+    with open(pr_file) as f:
+        f.readline()
+        reader = csv.reader(f)
+        for row in reader:
+            if row[0] == "microALL":
+                P.append(row[1])
+                R.append(row[2])
+    N = pr_file[pr_file.rindex('-')+1:pr_file.rindex(".")]
+    with open('P-%s.txt'%N, 'w') as f:
+        f.write('\n'.join([str(p) for p in P]))
+    with open("R-%s.txt"%N, 'w') as f:
+        f.write('\n'.join([str(r) for r in R]))
+
+def metric_npy2txt(metric_file):
+    data = np.load(metric_file)
+    with open(metric_file[:metric_file.rindex(".")] + ".txt", 'w') as f:
+        f.write('\n'.join([str(p) for p in data.tolist()]))
+
+def metric_all_npy2txt(metric_dir):
+    files = glob.glob(os.path.join(metric_dir, "*.npy"))
+    map(metric_npy2txt, files)
 
 
 # 4, 7, 12
@@ -188,5 +226,9 @@ if __name__ == '__main__':
     # show_proj_w_dis(proj_file, distance=cosine)
     # show_proj_w_dis("../ignore/data/proj_w_attn.npy", distance=cosine)
     # show_attention('../ignore/data/attention_weights_richdata.npy', model_index=567)
-    show_metric_N('/home/shangmingyang/wuque/projects/evaluator/test_normal', 'macro_p')
+    # show_metric_N('/home/shangmingyang/wuque/projects/evaluator/shapenet-nocolor/train_normal')
+    # PR_csv2txt('/home/shangmingyang/wuque/projects/evaluator/mvmodel.pr-739.csv')
+    metric_all_npy2txt('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color/val_normal')
+    metric_all_npy2txt('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color/train_normal')
+    metric_all_npy2txt('/home/shangmingyang/wuque/projects/evaluator/lhl/shapenet-color/test_normal')
     plt.show()
